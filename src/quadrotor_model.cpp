@@ -36,7 +36,8 @@
 using namespace quadrotor_model;
 
 QuadrotorModel::QuadrotorModel() {
-  // TODO
+  dynamics_ = Dynamics();
+  flight_controller_ = FlightController();
 }
 
 QuadrotorModel::~QuadrotorModel() {

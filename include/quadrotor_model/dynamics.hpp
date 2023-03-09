@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       quadrotor_model.hpp
- *  \brief      Quadrotor model class definition
+ *  \file       dynamics.hpp
+ *  \brief      Dynamics class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,37 +31,17 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef QUADROTOR_MODEL_HPP
-#define QUADROTOR_MODEL_HPP
-
-#include <iostream>
-#include <memory>
-
-#include "dynamics.hpp"
-#include "flight_controller.hpp"
-#include "quadrotor_state.hpp"
+#ifndef DYNAMICS_HPP
+#define DYNAMICS_HPP
 
 namespace quadrotor_model {
 
-class QuadrotorModel {
+class Dynamics {
 public:
-  QuadrotorModel();
-  ~QuadrotorModel();
-
-public:
-  void init(const float initial_time);
-
-  bool run(const float time);
-
-  bool get_state(const QuadrotorState& state);
-
-private:
-  float initial_time_;
-  Dynamics dynamics_;
-  FlightController flight_controller_;
-
-};  // class QuadrotorModel
+  Dynamics();
+  ~Dynamics();
+};  // class Dynamics
 
 }  // namespace quadrotor_model
 
-#endif  // QUADROTOR_MODEL_HPP
+#endif  // DYNAMICS_HPP

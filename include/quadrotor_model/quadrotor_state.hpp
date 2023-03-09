@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       quadrotor_model.hpp
- *  \brief      Quadrotor model class definition
+ *  \file       quadrotor_state.hpp
+ *  \brief      Quadrotor State class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,37 +31,25 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef QUADROTOR_MODEL_HPP
-#define QUADROTOR_MODEL_HPP
+#ifndef QUADROTOR_STATE_HPP
+#define QUADROTOR_STATE_HPP
 
-#include <iostream>
-#include <memory>
-
-#include "dynamics.hpp"
-#include "flight_controller.hpp"
-#include "quadrotor_state.hpp"
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 namespace quadrotor_model {
 
-class QuadrotorModel {
-public:
-  QuadrotorModel();
-  ~QuadrotorModel();
+struct QuadrotorState {
+    Eigen::Vector3d position = Eigen::Vector3d::Zero();
+    Eigen::Quaterniond orientation = Eigen::Quaterniond::Identity();
+    Eigen::Vector3d linear_velocity = Eigen::Vector3d::Zero();
+    Eigen::Vector3d angular_velocity = Eigen::Vector3d::Zero();
+    Eigen::Vector3d linear_acceleration = Eigen::Vector3d::Zero();
+    Eigen::Vector3d angular_acceleration = Eigen::Vector3d::Zero();
 
-public:
-  void init(const float initial_time);
 
-  bool run(const float time);
-
-  bool get_state(const QuadrotorState& state);
-
-private:
-  float initial_time_;
-  Dynamics dynamics_;
-  FlightController flight_controller_;
-
-};  // class QuadrotorModel
+};  // struct QuadrotorState
 
 }  // namespace quadrotor_model
 
-#endif  // QUADROTOR_MODEL_HPP
+#endif  // QUADROTOR_STATE_HPP

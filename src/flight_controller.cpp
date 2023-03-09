@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       quadrotor_model.hpp
- *  \brief      Quadrotor model class definition
+ *  \file       flight_controller.cpp
+ *  \brief      Flight controller implementation file.
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,37 +31,14 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef QUADROTOR_MODEL_HPP
-#define QUADROTOR_MODEL_HPP
+#include "quadrotor_model/flight_controller.hpp"
 
-#include <iostream>
-#include <memory>
+using namespace quadrotor_model;
 
-#include "dynamics.hpp"
-#include "flight_controller.hpp"
-#include "quadrotor_state.hpp"
+FlightController::FlightController() {
+  // TODO
+}
 
-namespace quadrotor_model {
-
-class QuadrotorModel {
-public:
-  QuadrotorModel();
-  ~QuadrotorModel();
-
-public:
-  void init(const float initial_time);
-
-  bool run(const float time);
-
-  bool get_state(const QuadrotorState& state);
-
-private:
-  float initial_time_;
-  Dynamics dynamics_;
-  FlightController flight_controller_;
-
-};  // class QuadrotorModel
-
-}  // namespace quadrotor_model
-
-#endif  // QUADROTOR_MODEL_HPP
+FlightController::~FlightController() {
+  // TODO
+}

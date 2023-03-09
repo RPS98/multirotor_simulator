@@ -32,6 +32,8 @@ include_directories(
 
 set(SOURCE_CPP_FILES
   src/${PROJECT_NAME}.cpp
+  src/dynamics.cpp
+  src/flight_controller.cpp
 )
 
 # create library and export it
