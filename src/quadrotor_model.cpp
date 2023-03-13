@@ -43,3 +43,9 @@ QuadrotorModel::QuadrotorModel() {
 QuadrotorModel::~QuadrotorModel() {
   // TODO
 }
+
+bool QuadrotorModel::run(const float time) {
+  // TODO
+
+
+}

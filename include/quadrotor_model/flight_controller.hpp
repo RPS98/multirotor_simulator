@@ -34,12 +34,18 @@
 #ifndef FLIGHT_CONTROLLER_HPP
 #define FLIGHT_CONTROLLER_HPP
 
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 namespace quadrotor_model {
 
 class FlightController {
 public:
   FlightController();
   ~FlightController();
+
+  
+
 };  // class FlightController
 
 }  // namespace quadrotor_model

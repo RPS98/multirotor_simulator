@@ -34,12 +34,44 @@
 #ifndef DYNAMICS_HPP
 #define DYNAMICS_HPP
 
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 namespace quadrotor_model {
 
 class Dynamics {
 public:
   Dynamics();
   ~Dynamics();
+
+private:
+  float mass_;
+
+  float kf_; // Thrust coefficient
+
+  Eigen::Matrix3d inertia_;
+  Eigen::Matrix<float, 3, 4> motors_translation_; // From motor to center of mass
+
+  // Motors
+  float motor_max_w_;
+  float motor_min_w_;
+
+
+public:
+  Eigen::Vector4d motor_w_to_thrust(const Eigen::Vector4d& motor_w) const {
+    Eigen::Vector4d thrust;
+    thrust << kf_ * motor_w(0) * motor_w(0), kf_ * motor_w(1) * motor_w(1),
+        kf_ * motor_w(2) * motor_w(2), kf_ * motor_w(3) * motor_w(3);
+    return thrust;
+  }
+
+  Eigen::Vector4d motor_thrust_to_w(const Eigen::Vector4d& motor_thrust) const {
+    Eigen::Vector4d w;
+    w << sqrt(motor_thrust(0) / kf_), sqrt(motor_thrust(1) / kf_),
+        sqrt(motor_thrust(2) / kf_), sqrt(motor_thrust(3) / kf_);
+    return w;
+  }
+
 };  // class Dynamics
 
 }  // namespace quadrotor_model
