@@ -37,19 +37,35 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-namespace quadrotor_model {
+namespace quadrotor {
 
-struct QuadrotorState {
-    Eigen::Vector3d position = Eigen::Vector3d::Zero();
-    Eigen::Quaterniond orientation = Eigen::Quaterniond::Identity();
-    Eigen::Vector3d linear_velocity = Eigen::Vector3d::Zero();
-    Eigen::Vector3d angular_velocity = Eigen::Vector3d::Zero();
-    Eigen::Vector3d linear_acceleration = Eigen::Vector3d::Zero();
-    Eigen::Vector3d angular_acceleration = Eigen::Vector3d::Zero();
+namespace state {
+struct Kinematics {
+  Eigen::Vector3d position             = Eigen::Vector3d::Zero();
+  Eigen::Quaterniond orientation       = Eigen::Quaterniond::Identity();
+  Eigen::Vector3d linear_velocity      = Eigen::Vector3d::Zero();
+  Eigen::Vector3d angular_velocity     = Eigen::Vector3d::Zero();
+  Eigen::Vector3d linear_acceleration  = Eigen::Vector3d::Zero();
+  Eigen::Vector3d angular_acceleration = Eigen::Vector3d::Zero();
+};  // struct Kinematics
 
+struct Dynamics {
+  Eigen::Vector3d force  = Eigen::Vector3d::Zero();
+  Eigen::Vector3d torque = Eigen::Vector3d::Zero();
+};  // struct Dynamics
 
-};  // struct QuadrotorState
+struct Actuation {
+  Eigen::Vector4d motor_w = Eigen::Vector4d::Zero();
+};  // struct Actuation
 
-}  // namespace quadrotor_model
+}  // namespace state
+
+struct State {
+  state::Kinematics kinematics;
+  state::Dynamics dynamics;
+  state::Actuation actuation;
+}; // struct state
+
+}  // namespace quadrotor
 
 #endif  // QUADROTOR_STATE_HPP

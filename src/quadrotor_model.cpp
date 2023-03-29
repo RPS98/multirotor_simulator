@@ -33,19 +33,10 @@
 
 #include "quadrotor_model/quadrotor_model.hpp"
 
-using namespace quadrotor_model;
+using namespace quadrotor;
 
-QuadrotorModel::QuadrotorModel() {
-  dynamics_ = Dynamics();
-  flight_controller_ = FlightController();
-}
+Model::Model() {}
 
-QuadrotorModel::~QuadrotorModel() {
+Model::~Model() {
   // TODO
-}
-
-bool QuadrotorModel::run(const float time) {
-  // TODO
-
-
 }

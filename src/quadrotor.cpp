@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       dynamics.hpp
- *  \brief      Dynamics class definition
+ *  \file       quadrotor.cpp
+ *  \brief      Quadrotor model implementation file.
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,25 +31,17 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef DYNAMICS_HPP
-#define DYNAMICS_HPP
+#include "quadrotor_model/quadrotor.hpp"
 
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
-#include "quadrotor_model.hpp"
+using namespace quadrotor;
 
-namespace quadrotor {
+Quadrotor::Quadrotor() {
+  dynamics_          = Dynamics();
+  flight_controller_ = FlightController();
+}
 
-class Dynamics {
-public:
-  Dynamics();
-  ~Dynamics();
+Quadrotor::~Quadrotor() {
+  // TODO
+}
 
-  Eigen::Vector4d acro_to_motor_w(
-    const Model &model,
-    const Eigen::Vector4d& acro_cmd) const;
-};  // class Dynamics
-
-}  // namespace quadrotor
-
-#endif  // DYNAMICS_HPP
+State Quadrotor::run(const actuation::Acro &actuator_, const float dtime) { State _new_state; }

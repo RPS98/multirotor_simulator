@@ -33,7 +33,7 @@
 
 #include "quadrotor_model/flight_controller.hpp"
 
-using namespace quadrotor_model;
+using namespace quadrotor;
 
 FlightController::FlightController() {
   // TODO
@@ -41,4 +41,58 @@ FlightController::FlightController() {
 
 FlightController::~FlightController() {
   // TODO
+}
+
+actuation::MotorW FlightController::acro_to_motor_w(const actuation::Acro &actuator) const {
+  // Angular velocity of the Aircraft error
+  const Eigen::Vector3d omega_err = actuator.angular_velocity - state_.kinematics.angular_velocity;
+
+  // Kinetic momentum of a rigid body
+  // L = I * w
+
+  // Equation of motion
+  // d/dt L = d/dt [I(t) * w(t)]
+
+  // The inertia matrix depends on time, so we can't use the constant inertia matrix
+  // d/dt L != I * d/dt w
+  // The inertia matrix is a function of the angular velocity
+  // d/dt L = I * d/dt w + w x (I * w)
+  // where w x (I * w) is the Coriolis effect
+  
+  // The d/dt w term is the angular acceleration. It is the control variable with a P controller
+  const Eigen::Vector3d angular_acceleration_desired = torque_p_gain * omega_err;
+
+  // The motion equation is:
+  // d/dt L = I * angular_acceleration + w x (I * w)
+  // The angular acceleration is the control variable, so we can solve for the desired torque
+  const Eigen::Vector3d torque_desired = 
+    model_.inertia * angular_acceleration_desired + 
+    state_.kinematics.angular_velocity.cross(model_.inertia * state_.kinematics.angular_velocity);
+
+  // The desired motor thrust
+
+
+
+
+
+
+  // // The d/dt w term is the angular acceleration. 
+  // const Eigen::Vector3d angular_acceleration = 
+  //   dynamics_.inertia.inverse() * (actuator.torque - state_.angular_velocity.cross(dynamics_.inertia * state_.angular_velocity));
+
+  // const Eigen::Vector3d torque = 
+  //   dynamics_.inertia * omega_err + state_.angular_velocity.cross(dynamics_.inertia * state_.angular_velocity);
+
+
+  // // Angular momentum = J * angular_velocity
+  // // dt Angular momentum = J * Angular_acceleration + angular_velocity x (J * angular_velocity) # Coriolis effect
+
+  // // Desired body torque
+  // // Desired Torque = J * K_ang_vel_tau(^-1) * (desired_angular_velocity - current_angular_velocity)
+  // //                  + desired_angular_velocity x (J * desired_angular_velocity)
+  // const Eigen::Vector3d tau_des = 
+  //   dynamics_.inertia * torque_p_gain * omega_err
+  //   + state_.angular_velocity.cross(dynamics_.inertia * state_.angular_velocity);
+
+
 }

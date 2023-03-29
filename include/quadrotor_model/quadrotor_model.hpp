@@ -34,34 +34,32 @@
 #ifndef QUADROTOR_MODEL_HPP
 #define QUADROTOR_MODEL_HPP
 
-#include <iostream>
-#include <memory>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
-#include "dynamics.hpp"
-#include "flight_controller.hpp"
-#include "quadrotor_state.hpp"
+namespace quadrotor {
 
-namespace quadrotor_model {
-
-class QuadrotorModel {
+class Model {
 public:
-  QuadrotorModel();
-  ~QuadrotorModel();
+  Model();
+  ~Model();
 
 public:
-  void init(const float initial_time);
+  float mass;
 
-  bool run(const float time);
+  float kf;  // Thrust coefficient
 
-  bool get_state(const QuadrotorState& state);
+  Eigen::Matrix3d inertia;
+  Eigen::Matrix4d b_allocation;
+  Eigen::Matrix4d b_allocation_inv;
+  Eigen::Matrix<float, 3, 4> motors_translation;  // From motor to center of mass
 
-private:
-  float initial_time_;
-  Dynamics dynamics_;
-  FlightController flight_controller_;
+  // Motors
+  float motor_max_w;
+  float motor_min_w;
 
-};  // class QuadrotorModel
+};  // class Model
 
-}  // namespace quadrotor_model
+}  // namespace quadrotor
 
 #endif  // QUADROTOR_MODEL_HPP

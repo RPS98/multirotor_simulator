@@ -31,9 +31,10 @@ include_directories(
 )
 
 set(SOURCE_CPP_FILES
-  src/${PROJECT_NAME}.cpp
   src/dynamics.cpp
+  src/quadrotor_model.cpp
   src/flight_controller.cpp
+  src/quadrotor.cpp
 )
 
 # create library and export it
@@ -72,7 +73,7 @@ if(BUILD_TESTING)
   ament_cppcheck(src/ include/ tests/)
   ament_clang_format(src/ include/ tests/ --config ${CMAKE_CURRENT_SOURCE_DIR}/.clang-format)
 
-  file(GLOB TEST_SOURCE "tests/*_benchmark.cpp")
+  file(GLOB TEST_SOURCE "tests/*_test.cpp")
 
   foreach(TEST_FILE ${TEST_SOURCE})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)

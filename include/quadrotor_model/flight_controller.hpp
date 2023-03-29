@@ -36,18 +36,29 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include "dynamics.hpp"
+#include "quadrotor_actuator.hpp"
+#include "quadrotor_state.hpp"
+#include "quadrotor_model.hpp"
 
-namespace quadrotor_model {
+namespace quadrotor {
 
 class FlightController {
 public:
   FlightController();
   ~FlightController();
 
-  
+  actuation::MotorW acro_to_motor_w(const actuation::Acro &acro_cmd) const;
+
+private:
+  State state_;
+  Dynamics dynamics_;
+  Model model_;
+
+  Eigen::Matrix3d torque_p_gain = Eigen::Vector3d(0.0, 0.0, 0.0).asDiagonal();
 
 };  // class FlightController
 
-}  // namespace quadrotor_model
+}  // namespace quadrotor
 
 #endif  // FLIGHT_CONTROLLER_HPP

@@ -33,7 +33,7 @@
 
 #include "quadrotor_model/dynamics.hpp"
 
-using namespace quadrotor_model;
+using namespace quadrotor;
 
 Dynamics::Dynamics() {
   // TODO
@@ -41,4 +41,9 @@ Dynamics::Dynamics() {
 
 Dynamics::~Dynamics() {
   // TODO
+}
+
+Eigen::Vector4d Dynamics::acro_to_motor_w(const Model& model,
+                                          const Eigen::Vector4d& acro_cmd) const {
+  return model.b_allocation_inv * acro_cmd;
 }

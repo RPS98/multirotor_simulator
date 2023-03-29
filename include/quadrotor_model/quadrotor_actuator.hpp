@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       dynamics.hpp
- *  \brief      Dynamics class definition
+ *  \file       quadrotor_actuator.hpp
+ *  \brief      Quadrotor Actuator class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,25 +31,27 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef DYNAMICS_HPP
-#define DYNAMICS_HPP
+#ifndef QUADROTOR_ACTUATOR_HPP
+#define QUADROTOR_ACTUATOR_HPP
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
-#include "quadrotor_model.hpp"
 
 namespace quadrotor {
 
-class Dynamics {
-public:
-  Dynamics();
-  ~Dynamics();
+namespace actuation {
 
-  Eigen::Vector4d acro_to_motor_w(
-    const Model &model,
-    const Eigen::Vector4d& acro_cmd) const;
-};  // class Dynamics
+struct Acro {
+  float thrust                     = 0.0f;
+  Eigen::Vector3d angular_velocity = Eigen::Vector3d::Zero();
+};  // struct Acro
+
+struct MotorW {
+  Eigen::Vector4d motor_w = Eigen::Vector4d::Zero();
+};  // struct MotorW
+
+}  // namespace actuation
 
 }  // namespace quadrotor
 
-#endif  // DYNAMICS_HPP
+#endif  // QUADROTOR_ACTUATOR_HPP
