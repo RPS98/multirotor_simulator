@@ -31,17 +31,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "quadrotor_model/quadrotor.hpp"
+#include "quadrotor.hpp"
 
 using namespace quadrotor;
 
-Quadrotor::Quadrotor() {
-  dynamics_          = Dynamics();
-  flight_controller_ = FlightController();
-}
+Quadrotor::Quadrotor() {}
 
 Quadrotor::~Quadrotor() {
   // TODO
 }
-
-State Quadrotor::run(const actuation::Acro &actuator_, const float dtime) { State _new_state; }

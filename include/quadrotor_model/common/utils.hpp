@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       dynamics.cpp
- *  \brief      Dynamics model implementation file.
+ *  \file       utils.hpp
+ *  \brief      Utils class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,19 +31,46 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "quadrotor_model/dynamics.hpp"
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
-using namespace quadrotor;
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
-Dynamics::Dynamics() {
-  // TODO
+namespace quadrotor {
+
+namespace utils {
+
+/**
+ * @brief Clamp a vector between a min and a max
+ *
+ * @param vector Vector to be clamped
+ * @param min Minimum value
+ * @param max Maximum value
+ */
+inline void clamp_vector(Eigen::Vector3f &vector, const float min, const float max) {
+  for (int i = 0; i < 3; i++) {
+    std::clamp(vector(i), min, max);
+  }
+  return;
 }
 
-Dynamics::~Dynamics() {
-  // TODO
+/**
+ * @brief Clamp a vector between a min and a max
+ *
+ * @param vector Vector to be clamped
+ * @param min Minimum value
+ * @param max Maximum value
+ */
+inline void clamp_vector(Eigen::Vector4f &vector, const float min, const float max) {
+  for (int i = 0; i < 4; i++) {
+    std::clamp(vector(i), min, max);
+  }
+  return;
 }
 
-Eigen::Vector4d Dynamics::acro_to_motor_w(const Model& model,
-                                          const Eigen::Vector4d& acro_cmd) const {
-  return model.b_allocation_inv * acro_cmd;
-}
+}  // namespace utils
+
+}  // namespace quadrotor
+
+#endif  // UTILS_HPP

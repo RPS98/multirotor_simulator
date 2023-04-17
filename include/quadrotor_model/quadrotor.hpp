@@ -37,10 +37,10 @@
 #include <iostream>
 #include <memory>
 
-#include "dynamics.hpp"
-#include "flight_controller.hpp"
-#include "quadrotor_actuator.hpp"
-#include "quadrotor_state.hpp"
+#include "common/actuation.hpp"
+#include "common/model.hpp"
+#include "common/state.hpp"
+#include "dynamics/dynamics.hpp"
 
 namespace quadrotor {
 
@@ -48,20 +48,6 @@ class Quadrotor {
 public:
   Quadrotor();
   ~Quadrotor();
-
-public:
-  void init(const float initial_time);
-
-  State run(const actuation::Acro& actuator_, const float dtime);
-  bool get_state(const State& state);
-
-private:
-  float initial_time_;
-  float last_time_;
-
-  Dynamics dynamics_;
-  FlightController flight_controller_;
-  State state_;
 };  // class Quadrotor
 
 }  // namespace quadrotor

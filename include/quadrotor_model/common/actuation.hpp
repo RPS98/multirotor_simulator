@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       quadrotor_model.cpp
- *  \brief      Quadrotor model implementation file.
+ *  \file       actuation.hpp
+ *  \brief      Quadrotor Actuator class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,12 +31,27 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "quadrotor_model/quadrotor_model.hpp"
+#ifndef ACTUATION_HPP
+#define ACTUATION_HPP
 
-using namespace quadrotor;
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
-Model::Model() {}
+namespace quadrotor {
 
-Model::~Model() {
-  // TODO
-}
+namespace actuation {
+
+struct MotorW {
+  Eigen::Vector4f angular_velocity     = Eigen::Vector4f::Zero();
+};  // struct MotorW
+
+struct Acro {
+  Eigen::Vector3f angular_velocity = Eigen::Vector3f::Zero();
+  float thrust                     = 0.0;
+};  // struct Acro
+
+}  // namespace actuation
+
+}  // namespace quadrotor
+
+#endif  // ACTUATION_HPP

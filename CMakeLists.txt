@@ -31,9 +31,8 @@ include_directories(
 )
 
 set(SOURCE_CPP_FILES
-  src/dynamics.cpp
-  src/quadrotor_model.cpp
-  src/flight_controller.cpp
+  src/common/model.cpp
+  src/dynamics/dynamics.cpp
   src/quadrotor.cpp
 )
 
@@ -64,7 +63,7 @@ install(
   INCLUDES DESTINATION include
 )
 
-# # check if tests are enabled
+# check if tests are enabled
 if(BUILD_TESTING)
   find_package(ament_cmake_cppcheck REQUIRED)
   find_package(ament_cmake_clang_format REQUIRED)
