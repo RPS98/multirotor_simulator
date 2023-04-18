@@ -1,7 +1,10 @@
-# quadrotor_model
+# Quadrotor Model
 C++ Quadrotor Model
 
 The purpose of this repository is to provide a quadrotor model, implemented in c++.
+For that, the implementation of the quadrotor dynamics, inertial measurement unit (IMU) and flight controller has been done.
+
+
 
 The objective of the model is that given a state of the quadrotor and an action, to calculate the evolution of the state. For this purpose, the state, actuation and dynamics of the system must be defined.
 
@@ -18,20 +21,43 @@ The code flow is the following:
 
 
 ## Table of Contents  
-- [1. Quadrotor State](#1-quadrotor-state)
-    - [1.1 Kinematics](#11-kinematics)
-    - [1.2 Dynamics](#12-dynamics)
-    - [1.3 Actuation](#13-actuation)
-- [2. Quadrotor Actuation](#2-quadrotor-actuation)
-- [3. Quadrotor Dynamics](#3-quadrotor-dynamics)
+- [Quadrotor State](#quadrotor-state)
+    - [Kinematics](#kinematics)
+    - [Dynamics](#dynamics)
+    - [Actuation](#actuation)
+- [Quadrotor Dynamics](#quadrotor-dynamics)
+    - [1. Forces and Moments due to Motors at Motor Frame](#1-forces-and-moments-due-to-motors-at-motor-frame)
+    - [2. Forces and Moments due to Motors at Body Frame](#2-forces-and-moments-due-to-motors-at-body-frame)
+        - [2.1 Forces](#21-forces)
+        - [2.2 Moments](#22-moments)
+            - [2.2.1 Moment due to Thrust Force](#221-moment-due-to-thrust-force)
+            - [2.2.2 Moment due to Torque](#222-moment-due-to-torquemoment-due-to-torque)
+                - [2.2.2.1 Moment due to Motor Rotation](#2221-moment-due-to-motor-rotation)
+                - [2.2.2.2 Moment due to Motor Inertia](#2222-moment-due-to-motor-inertia)
+            - [Summary of Moments](#summary-of-moments)
+        - [2.3 Summary of Forces and Moments](#23-summary-of-forces-and-moments-due-to-motors-at-body-frame)
+    - [3. Forces and Moments due to Environment](#3-forces-and-moments-due-to-environment)
+        - [3.1 3.1 Forces due to Environment](#31-forces-due-to-environment)
+            - [3.1.1 Gravity Force](#311-gravity-force)
+            - [3.1.2 Aerodynamic Drag](#312-aerodynamic-drag)
+            - [3.1.3 Stochastic Force](#313-stochastic-force)
+        - [3.2 Moments due to Environment](#32-moments-due-to-environment)
+            - [3.2.1 Aerodynamic Drag](#321-aerodynamic-drag)
+            - [3.2.2 Stochastic Moment](#322-stochastic-moment)
+- [Quadrotor Kinematics](#quadrotor-kinematics)
+    - [1. Motors Angular Velocity Derivative](#1-motors-angular-velocity-derivative)
+    - [2. Vehicle Angular Velocity Derivative](#2-vehicle-angular-velocity-derivative)
+    - [3. Vehicle Lienar Velocity Derivative](#3-vehicle-linear-velocity-derivative)
+    - [4. Vehicle Orientation Derivative](#4-vehicle-orientation-derivative)
+    - [5. Vehicle Position Derivative](#5-vehicle-position-derivative)
+- [Quadrotor Flight Controller](#quadrotor-flight-controller)
+- [Inertial Measurement Unit](#inertial-measurement-unit)
 
-
-
-## 1. Quadrotor State
+# Quadrotor State
 
 Quadrotor is a rigid body, which mass center is the origin of the body frame. 
 
-### 1.1 Kinematics
+## Kinematics
 The state from the point of view of kinematics can be defined as:
 
 * **Position** 
@@ -47,21 +73,22 @@ $$ \mathbf{a} = [a_x, a_y, a_z] $$
 * **Angular acceleration** 
 $$ \mathbf{\alpha} = [\alpha_x, \alpha_y, \alpha_z] $$
 
-### 1.2 Dynamics
-The state from the point of view of dynamics can be defined as:
+## Dynamics
+The state from the point of view of dynamics can be defined as sum of forces and moments acting on the quadrotor:
 
 * **Force** 
 $$ \mathbf{F} = [F_x, F_y, F_z] $$
 * **Torque** 
 $$ \mathbf{\tau} = [\tau_x, \tau_y, \tau_z] $$
 
-### 1.3 Actuation
-The state from the point of view of actuation can be defined as:
+## Actuation
+The state from the point of view of actuation can be defined as the angular speed of the motors:
 
 * **Motor angular velocity** 
 $$ \mathbf{\omega_m} = [\omega_1, \omega_2, \omega_3, \omega_4] $$
 
-## 2. Quadrotor Actuation
+
+# Quadrotor Actuation
 
 The are several ways to define the actuation of a quadrotor. The lowest level of abstraction is the motor angular velocity, which is the input of the motors.
 
@@ -78,83 +105,98 @@ $$ \mathbf{v} = [v_x, v_y, v_z, \omega_z] $$
 * **Position mode** 
 $$ \mathbf{p} = [x, y, z, \theta_z] $$
 
-For the purpose of this model, the actuation will be defined motor angular velocity. Usually, flight controllers convert from a higher level of abstraction to this one.
 
-## 3. Quadrotor Dynamics
+# Quadrotor Dynamics
 
-Given a delta time $\Delta t$, each quadrotor state derivative must be calculated.
+The quadrotor change it state due to the forces and moments applied to it. They are produced by the motors, the environment and the quadrotor itself.
+
+## Quadrotor Dynamics Table of Contents  
+- [1. Forces and Moments due to Motors at Motor Frame](#1-forces-and-moments-due-to-motors-at-motor-frame)
+- [2. Forces and Moments due to Motors at Body Frame](#2-forces-and-moments-due-to-motors-at-body-frame)
+    - [2.1 Forces](#21-forces)
+    - [2.2 Moments](#22-moments)
+        - [2.2.1 Moment due to Thrust Force](#221-moment-due-to-thrust-force)
+        - [2.2.2 Moment due to Torque](#222-moment-due-to-torquemoment-due-to-torque)
+            - [2.2.2.1 Moment due to Motor Rotation](#2221-moment-due-to-motor-rotation)
+            - [2.2.2.2 Moment due to Motor Inertia](#2222-moment-due-to-motor-inertia)
+        - [Summary of Moments](#summary-of-moments)
+    - [2.3 Summary of Forces and Moments](#23-summary-of-forces-and-moments-due-to-motors-at-body-frame)
+- [3. Forces and Moments due to Environment](#3-forces-and-moments-due-to-environment)
+    - [3.1 3.1 Forces due to Environment](#31-forces-due-to-environment)
+        - [3.1.1 Gravity Force](#311-gravity-force)
+        - [3.1.2 Aerodynamic Drag](#312-aerodynamic-drag)
+        - [3.1.3 Stochastic Force](#313-stochastic-force)
+    - [3.2 Moments due to Environment](#32-moments-due-to-environment)
+        - [3.2.1 Aerodynamic Drag](#321-aerodynamic-drag)
+        - [3.2.2 Stochastic Moment](#322-stochastic-moment)
+
+
+## 1. Forces and Moments due to Motors at Motor Frame
+
+Each motor produces a force in its z-axis and a torque in the x and y axes. The forces and moments produced by the motors are shown in the following figure:
+
+![quadrotor_scheme](resources/quadrotor_motor.svg)
+
+The force produced by the motor is given by the $$k_f$$ constant, which is the thrust coefficient, and the angular velocity of the motor:
+
+$$ F_m = k_f \cdot \omega_m^2 $$
+
+And the torque produced by the motor is given by the $$k_t$$ constant, which is the torque coefficient, and the angular velocity of the motor:
+
+$$ \tau_m = k_t \cdot \omega_m^2 $$
+
+## 2. Forces and Moments due to Motors at Body Frame
+
+In the following quadrotor scheme, the forces and moments produced by the motors are shown in the body frame. Each motor contribute to the total force and torque applied to the quadrotor in the body frame.
+
+![quadrotor_scheme](resources/quadrotor_scheme.svg)
+
+### **2.1 Forces**
+
+The force applied to the rigid body is the sum of the forces produced by each motor:
+
+$$ F = \sum_{i=1}^4 F_i $$
+
+If motors are aligned with the body frame, the force is:
+
+$$ F_z = \sum_{i=1}^4 F_{z_i} = F_1 + F_2 + F_3 + F_4 $$
+
+If motor are aligned with the body frame and using the quadrotor scheme, and the relation between the angular velocity of the motor and the force produced by it, the force applied to the rigid body is:
 
 $$
-\dot{x}
-=
 \begin{bmatrix}
-\dot{x} \\
-\dot{q} \\
-\dot{v} \\
-\dot{\omega}
+F_x \\
+F_y \\
+F_z
 \end{bmatrix}
 =
+\mathbf{T_{FW}}
+\cdot
+\mathbf{W²}
+=
 \begin{bmatrix}
-v \\
-\frac{1}{2} \cdot \omega \times q \\
-\frac{1}{m} \cdot F \\
-I^{-1} \cdot \tau
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+k_f & -k_f & k_f & -k_f
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_1^2 \\
+\omega_2^2 \\
+\omega_3^2 \\
+\omega_4^2
 \end{bmatrix}
 $$
 
-### 3.1 Motors Angular Velocity Derivative
-Each motor can be modeled as a first order system, with a time constant $\tau$, a maximum angular velocity $\omega_{max}$ and a minimum angular velocity $\omega_{min}$:
+Where $\mathbf{T_{FW}}$ is the transformation matrix from motors angular velocity to forces in the body frame.
 
-$$ \frac{d\omega_m}{dt} = \frac{1}{\tau} \cdot (\omega_{m,des} - \omega_m) $$
+### **2.2 Moments**
 
-Where:
-- $\omega_{m,des}$ is the desired angular velocity of the motor between $\omega_{min}$ and $\omega_{max}$.
-- $\omega_m$ is the angular velocity of the motor.
-- $\tau$ is the time constant of the motor dynamics.
+The torque applied to the rigid body is the sum of the torques produced by each motor:
 
-### 3.2 Angular Velocity Derivative
+$$ \tau = \sum_{i=1}^4 \tau_i $$
 
-Motors angular velocity changes produce a torque on the quadrotor. Also, environment forces and moments produce a torque too. 
-
-The angular momentum of a rigid body is given by the product of the inertia matrix and the angular velocity vector:
-
-$$ L = I \cdot \omega_{B} $$
-
-Where:
-- $L$ is the angular momentum of the quadrotor
-- $I$ is the inertia matrix of the quadrotor
-- $\\omega_{B}$ is the angular velocity of the quadrotor in the body frame
-
-Due to the Coriolis effect (or gyroscopic torque), the angular momentum derivative is:
-
-$$ \frac{dL}{dt} = I \cdot \frac{d\omega}{dt} + \omega_{B} \times (I \cdot \omega_{B}) $$
-
-Also, the angular momentum derivative is equal to the sum of all external moments acting on the rigid body:
-
-$$ \frac{dL}{dt} = I \cdot \frac{d\omega}{dt} =  \sum_{i=1}^{n} \tau_i $$
-
-Where:
-- $\tau_i$ is the moment vector produced by the $i$-th external force or moment
-
-Reordering the terms, the angular velocity derivative can be calculated as:
-
-$$ \frac{d\omega}{dt} = I^{-1} \cdot [\sum_{i=1}^{n} \tau_i - \omega_{B} \times (I \cdot \omega_{B})] $$
-
-The sum of all external moments is the sum of the moments produced by the motors, the one produced by the aerodynamic moments and the stochastic moments:
-<!-- and the gyroscopic moment or the Coriolis moment -->
-
-$$ \sum_{i=1}^{n} \tau_i = \sum_{i=1}^{n} \tau_{i,motor} + \tau_{aero} + \tau_{stochastic} $$
-
-Where:
-- $\tau_{i,motor}$ is the moment produced by the $i$-th motor
-- $\tau_{aero}$ is the aerodynamic moment
-- $\tau_{stochastic}$ is the stochastic moment
-<!-- - $\tau_{coriolis}$ is the Coriolis moment -->
-
-
-**Moment Produced by the Motors**
-
-The moment produced by each motor is composed of two parts, one due to the thrust force and another due to the torque produced by the motor:
+It is composed of two parts, one due to the thrust force in motor frame and another due to the torque produced by the motor:
 
 $$ \tau_{i} = \tau_{i,thrust} + \tau_{i,torque} $$
 
@@ -162,6 +204,7 @@ Where:
 - $\tau_{i,thrust}$ is the moment produced by the thrust force of the $i$-th motor
 - $\tau_{i,torque}$ is the moment produced by the torque of the $i$-th motor
 
+#### **2.2.1 Moment due to Thrust Force**
 The moment produced by the thrust force is given by the cross product between the position of the motor and the thrust force:
 
 $$ \tau_{i,thrust} = \mathbf{r}_i \times \mathbf{F}_i   $$
@@ -170,14 +213,59 @@ Where:
 - $\mathbf{r}_i$ is the position of the $i$-th motor
 - $\mathbf{F}_i$ is the thrust force of the $i$-th motor
 
-Also, the thrust force of each motor depends on the angular velocity of the motor:
+Also, the thrust force of each motor depends on the angular velocity of the motor and the thrust coefficient as explained before.
 
-$$ \mathbf{F}_i = k_f \cdot \omega_i^2 $$
+If motor are aligned with the body frame and using the quadrotor scheme, the moment produced by the thrust force of each motor is:
 
-where:
-- $\mathbf{F}_i$ is the force produced by the motor in the z axis of motor frame.
-- $k_f$ is the thrust coefficient of the motor.
-- $\omega_i$ is the angular speed of the motor.
+$$
+\begin{bmatrix}
+\tau_x \\
+\tau_y \\
+\tau_z
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 & d_y & 0 & -d_y \\
+-d_x & 0 & d_x & 0 \\
+0 & 0 & 0 & 0
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+F_1 \\
+F_2 \\
+F_3 \\
+F_4
+\end{bmatrix}
+$$
+
+$$
+\begin{bmatrix}
+\tau_x \\
+\tau_y \\
+\tau_z
+\end{bmatrix}
+=
+\mathbf{T_{TRW_{xy}}}
+\cdot
+\mathbf{W²}
+=
+\begin{bmatrix}
+0 & d_y \cdot k_f & 0 & -d_y \cdot k_f \\
+-d_x \cdot k_f & 0 & d_x \cdot k_f & 0 \\
+0 & 0 & 0 & 0
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_1^2 \\
+\omega_2^2 \\
+\omega_3^2 \\
+\omega_4^2
+\end{bmatrix}
+$$
+
+Where $\mathbf{T_{TRW_{xy}}}$ is the transformation matrix from motors angular velocity to torques in the x-y plane of the body frame due to the thrust force generated by the motors rotation.
+
+#### **2.2.2 Moment due to Torque**
 
 The moment produced by each motor torque in motor frame is given by the one generated by the motor rotation and the inertia of the motor:
 
@@ -187,6 +275,8 @@ Where:
 - $\tau_{i,motor}$ is the moment produced by the motor rotation
 - $\tau_{i,inertia}$ is the moment produced by the inertia of the motor
 
+##### **2.2.2.1 Moment due to Motor Rotation**
+
 The moment produced by the motor rotation in motor frame is given by the motor torque coefficient:
 
 $$ \tau_{i,motor} = k_t \cdot \omega_i^2 $$
@@ -194,6 +284,37 @@ $$ \tau_{i,motor} = k_t \cdot \omega_i^2 $$
 Where:
 - $k_t$ is the torque coefficient of the motor.
 - $\omega_i$ is the angular speed of the motor.
+
+If motor are aligned with the body frame and using the quadrotor scheme, the moment produced by the motor rotation in motor frame is:
+
+$$
+\begin{bmatrix}
+\tau_x \\
+\tau_y \\
+\tau_z
+\end{bmatrix}
+=
+\mathbf{T_{TRW_{z}}}
+\cdot
+\mathbf{W²}
+=
+\begin{bmatrix}
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+k_t & -k_t & k_t & -k_t
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_1^2 \\
+\omega_2^2 \\
+\omega_3^2 \\
+\omega_4^2
+\end{bmatrix}
+$$
+
+Where $\mathbf{T_{TRW_{z}}}$ is the transformation matrix from motors angular velocity to torques in z axis of the body frame due to the motor rotation.
+
+##### **2.2.2.2 Moment due to Motor Inertia**
 
 The moment produced by the inertia of the motor in motor frame is given by the product of the motor rotational inertia and the angular acceleration of the motor:
 
@@ -203,36 +324,44 @@ Where:
 - $J_{i,motor}$ is the rotational inertia of the motor.
 - $\dot{\omega}_i$ is the angular acceleration of the motor.
 
-In resumen, the moment produced by each motor torque in motor frame is given by:
+If motor are aligned with the body frame and using the quadrotor scheme, the moment produced by the motor inertia in motor frame is:
 
-$$ \tau_{i,torque} = k_t \cdot \omega_i^2 + J_{i,motor} \cdot \dot{\omega}_i $$
+$$
+\begin{bmatrix}
+\tau_x \\
+\tau_y \\
+\tau_z
+\end{bmatrix}
+=
+\mathbf{T_{TIdW_{z}}}
+\cdot
+\mathbf{dW}
+=
+\begin{bmatrix}
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+J & -J & J & -J
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\dot{\omega_1} \\
+\dot{\omega_2} \\
+\dot{\omega_3} \\
+\dot{\omega_4}
+\end{bmatrix}
+$$
 
-Rotating the motor frame to the quadrotor frame, the moment produced by each motor torque in quadrotor frame is given by:
+Where $\mathbf{T_{TIdW_{z}}}$ is the transformation matrix from motors angular acceleration to torques in z axis of the body frame due to motor inertia.
 
-$$ \tau_{i,torque} = \mathbf{r}_i \times [k_t \cdot \omega_i^2 + J_{i,motor} \cdot \dot{\omega}_i] $$
+#### **Summary of Moments**
 
-Finally, the moment produced by each motor torque in quadrotor frame is given by:
+In resumen, the moment produced by each motor torque in body frame is given by the sum of the moment produced by the thrust force and the moment produced by the motor rotation and inertia:
 
-$$ \tau_{i,torque} = \mathbf{r}_i \times [k_f \cdot \omega_i^2 + k_t \cdot \omega_i^2 + J_{i,motor} \cdot \dot{\omega}_i] $$
+$$ \tau_i = \tau_{i,thrust} + \tau_{i,motor} + \tau_{i,inertia}  $$
 
-Where:
-- $\mathbf{r}_i$ is the position of the $i$-th motor
+If motor are aligned with the body frame and using the quadrotor scheme, the total moment produced by each motor in body frame is given by:
 
-Using the following scheme of a quadrotor to simplify equations, the forces applied to it by the rotors can be calculated:
-
-![quadrotor_scheme](resources/quadrotor_scheme.svg)
-
-Been *k<sub>f</sub>* the thrust coefficient and *k<sub>t</sub>* the torque coefficient, the force and torque applied by each motor can be calculated as:
-
-* Force:
-
-$$ F_m = [F_1, F_2, F_3, F_4] = k_f \cdot [\omega_1^2, \omega_2^2, \omega_3^2, \omega_4^2] $$
-
-* Torque:
-
-$$ \tau_m = [ \tau_1, \tau_2, \tau_3, \tau_4 ] = k_t \cdot [ \omega_1^2, \omega_2^2, \omega_3^2, \omega_4^2 ] + J \cdot [ \dot{\omega}_1, \dot{\omega}_2, \dot{\omega}_3, \dot{\omega}_4 ] $$
-
-Therefore, the total torque applied to the quadrotor by the rotors can be calculated as:
+$$ \tau_ = \mathbf{T_{TRW_{xy}}} \cdot \mathbf{W²} + \mathbf{T_{TRW_{z}}} \cdot \mathbf{W²} + \mathbf{T_{TIdW_{z}}} \cdot \mathbf{dW} $$
 
 $$
 \begin{bmatrix} 
@@ -270,80 +399,133 @@ J & -J & J & -J
 \end{bmatrix}
 $$
 
+$$
+\begin{bmatrix} 
+\tau_x \\ \tau_y \\ \tau_z 
+\end{bmatrix}
+=
+\mathbf{T_{TW}} \cdot \mathbf{W²}
++
+\mathbf{T_{TIdW_{z}}} \cdot \mathbf{dW}
+=
+\begin{bmatrix}
+0 & d_y \cdot k_f & 0 & -d_y \cdot k_f \\
+-d_x \cdot k_f & 0 & d_x \cdot k_f & 0 \\
+k_t & -k_t & k_t & -k_t
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_1^2 \\ \omega_2^2 \\ \omega_3^2 \\ \omega_4^2
+\end{bmatrix}
++
+\begin{bmatrix}
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+J & -J & J & -J
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\dot{\omega}_1 \\ \dot{\omega}_2 \\ \dot{\omega}_3 \\ \dot{\omega}_4
+\end{bmatrix}
+$$
 
-**Moment Produced by the Aerodynamics**
+Where $\mathbf{T_{TW}}$ is the transformation matrix from motors angular velocity to torques in body frame due to motors.
 
-The aerodynamic moment is produced by the air resistance to the quadrotor's motion, and it depends on the quadrotor's shape, size, and orientation. The aerodynamic moment can be calculated by:
+### **2.3 Summary of Forces and Moments due to Motors at Body Frame**
 
-$$ \tau_{aero} = -\omega \times (I_{aero} \cdot \omega) $$
+The summary of forces due to motors at body frame is given by the forces produced by the thrust generated by each motor. 
+The summary of moments due to motors at body frame is given by the sum of the moments produced by the thrust force of each motor, the moment produced by the motor rotation and the moment produced by the motor inertia.
 
-Where:
-- $\tau_{aero}$ is the aerodynamic moment
-- $I_{aero}$ is the aerodynamic inertia matrix
-- $\omega$ is the angular velocity of the quadrotor
+If motor are aligned with the body frame and using the quadrotor scheme, the summary of forces and moments due to motors at body frame is given by:
 
-The negative sign in front of the equation indicates that the aerodynamic moment always opposes the quadrotor's motion.
+$$
+\begin{bmatrix}
+F_z \\
+\tau_x \\
+\tau_y \\
+\tau_z
+\end{bmatrix}
+=
+\mathbf{T_{FTW}} \cdot \mathbf{W²}
++
+\mathbf{T_{FTIdW_{z}}} \cdot \mathbf{dW}
+=
+\begin{bmatrix}
+k_f & -k_f & k_f & -k_f \\
+0 & d_y \cdot k_f & 0 & -d_y \cdot k_f \\
+-d_x \cdot k_f & 0 & d_x \cdot k_f & 0 \\
+k_t & -k_t & k_t & -k_t
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_1^2 \\ \omega_2^2 \\ \omega_3^2 \\ \omega_4^2
+\end{bmatrix}
++
+\begin{bmatrix}
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+J & -J & J & -J
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\dot{\omega}_1 \\ \dot{\omega}_2 \\ \dot{\omega}_3 \\ \dot{\omega}_4
+\end{bmatrix}
+$$
 
-**Moment Produced by the Stochastic Forces**
+where $\mathbf{T_{FTW}}$ is the transformation matrix from motors angular velocity to forces and moments at body frame due to motors. The $\mathbf{T_{FTIdW_{z}}}$ is the transformation matrix from motors angular velocity derivative to forces and moments at body frame due to motors inertia.
 
-Stochastic moments are produced by the random forces that act on the vehicle.
+## 3. Forces and Moments due to Environment
 
-**Angular Velocity Derivative**
+Enironment forces and moments are produced by the environment, such as wind, gravity, and air resistance.
 
-Therefore, the angular velocity derivative can be calculated as:
+### **3.1 Forces due to Environment**
 
-$$ \frac{d\omega}{dt} = I^{-1} \cdot [(\sum_{i=1}^{n} \mathbf{r}_i \times [k_f \cdot \omega_i^2 + k_t \cdot \omega_i^2 + J_{i,motor} \cdot \dot{\omega}_i]) -\omega \times (I_{aero} \cdot \omega) + \tau_{stochastic} - \omega_{B} \times (I \cdot \omega_{B})] $$
+The forces can be simplified as the sum of the gravity force, the aerodynamic drag and a stochastic force.
 
-### Lineal Velocity Derivative
+#### **3.1.1 Gravity Force**
 
-The velocity is calculated using the acceleration:
+The gravity force is produced by the gravity acceleration. The gravity force in the body frame is given by:
 
-$$ \dot{\mathbf{v}} = \mathbf{a} $$
+$$
+\begin{bmatrix}
+F_{g_x} \\
+F_{g_y} \\
+F_{g_z}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 \\
+0 \\
+m \cdot g
+\end{bmatrix}
+$$
 
-Where:
-- $\mathbf{a}$ is the acceleration of the quadrotor.
+where:
+- $m$ is the quadrotor mass
+- $g$ is the gravity acceleration
 
-The acceleration is calculated using Newton's second law of motion:
+Given the quadrotor's orientation, the gravity force in the world frame can be calculated by:
 
-$$ \mathbf{a} = \frac{1}{m} \cdot \mathbf{F} $$
+$$
+\begin{bmatrix}
+F_{g_x} \\
+F_{g_y} \\
+F_{g_z}
+\end{bmatrix}
+=
+\mathbf{R_{BW}} 
+\cdot 
+\begin{bmatrix}
+0 \\
+0 \\
+m \cdot g
+\end{bmatrix}
+$$
 
-Where:
-- $m$ is the mass of the quadrotor.
-- $\mathbf{F}$ is the total force applied to the quadrotor.
+where $\mathbf{R_{BW}}$ is the rotation matrix from body frame to world frame.
 
-The total force applied to the quadrotor is the sum of the forces applied to the quadrotor by the rotors and the forces applied to the quadrotor by the environment:
-
-$$ \mathbf{F} = \mathbf{F_{rotors}} + \mathbf{F_{environment}} $$
-
-Where:
-- $\mathbf{F_{rotors}}$ is the total force applied to the quadrotor by the rotors.
-- $\mathbf{F_{environment}}$ is the total force applied to the quadrotor by the environment.
-
-The total force applied to the quadrotor by the rotors is the sum of the forces applied to the quadrotor by each rotor:
-
-$$ \mathbf{F_{rotors}} = \sum_{i=1}^{4} \mathbf{F_{rotor_i}}  = k_f \cdot \sum_{i=1}^{4} \mathbf{w_{rotor_i}} $$
-
-Where:
-- $k_f$ is the thrust coefficient of the rotors.
-- $\mathbf{w_{rotor_i}}$ is the angular speed of the rotor i.
-
-The total force applied to the quadrotor by the environment is the sum of the forces applied to the quadrotor by the gravity, the drag force and stochastic forces:
-
-$$ \mathbf{F_{environment}} = \mathbf{F_{gravity}} + \mathbf{F_{drag}} + \mathbf{F_{stochastic}} $$
-
-Where:
-- $\mathbf{F_{gravity}}$ is the force applied to the quadrotor by the gravity.
-- $\mathbf{F_{drag}}$ is the force applied to the quadrotor by the drag force.
-- $\mathbf{F_{stochastic}}$ is the stochastic force applied to the quadrotor.
-
-The force applied to the quadrotor by the gravity is given by the following equation:
-
-$$ \mathbf{F_{gravity}} = - m \cdot g \cdot \mathbf{e_3} $$
-
-Where:
-- $m$ is the mass of the quadrotor.
-- $g$ is the gravitational acceleration.
-- $\mathbf{e_3}$ is the unit vector in the z axis of the world frame.
+#### **3.1.2 Aerodynamic Drag**
 
 The drag force is proportional to the square of the vehicle's speed, and is opposite in direction to the velocity vector. The magnitude of the drag force is proportional to the square of the vehicle's speed and to a coefficient of drag that depends on the shape and size of the vehicle, as well as the properties of the fluid through which the vehicle is moving. The mathematical model of the drag force can be expressed as:
 
@@ -363,17 +545,128 @@ $$ \mathbf{F_{drag}} = - k_{drag} \cdot v^2 $$
 where:
 - $k_{drag}$ is the drag coefficient.
 
-$$ \mathbf{F_{drag}} = - k_{drag} \cdot \mathbf{v} $$
+
+#### **3.1.3 Stochastic Force**
+
+Stochastic forces are produced by the random forces that act on the vehicle. This can be modeled as a random force with a normal distribution.
+
+### **3.2 Moments due to Environment**
+
+The moments can be simplified as the sum of the aerodynamic moment and a stochastic moment.
+
+#### **3.2.1 Aerodynamic Drag**
+
+The aerodynamic moment is produced by the air resistance to the quadrotor's motion, and it depends on the quadrotor's shape, size, and orientation. The aerodynamic moment can be calculated by:
+
+$$ \tau_{aero} = -\omega \times (I_{aero} \cdot \omega) $$
 
 Where:
-- $k_{drag}$ is the drag coefficient.
-- $\mathbf{v}$ is the velocity of the quadrotor.
+- $\tau_{aero}$ is the aerodynamic moment
+- $I_{aero}$ is the aerodynamic inertia matrix
+- $\omega$ is the angular velocity of the quadrotor
 
-The stochastic force applied to the quadrotor is a random force that is applied to the quadrotor to simulate the effects of the environment.
+The negative sign in front of the equation indicates that the aerodynamic moment always opposes the quadrotor's motion.
 
-### Attitude Derivative
+#### **3.2.2 Stochastic Moment**
 
-The attitude is calculated using the angular velocity (quaternion derivative):
+Stochastic moments are produced by the random forces that act on the vehicle. It can be modeled as a random moment with a normal distribution.
+
+
+
+# Quadrotor Kinematics
+
+Given a delta time $\Delta t$, each quadrotor state derivative must be calculated to get the new state.
+
+$$
+\dot{x}
+=
+\begin{bmatrix}
+\dot{x} \\
+\dot{q} \\
+\dot{v} \\
+\dot{\omega}
+\end{bmatrix}
+=
+\begin{bmatrix}
+v \\
+\frac{1}{2} \cdot \omega \times q \\
+\frac{1}{m} \cdot F \\
+I^{-1} \cdot (\tau - w \times I \omega) 
+\end{bmatrix}
+$$
+
+
+## Quadrotor Kinematics Table of Contents  
+- [1. Motors Angular Velocity Derivative](#1-motors-angular-velocity-derivative)
+- [2. Vehicle Angular Velocity Derivative](#2-vehicle-angular-velocity-derivative)
+- [3. Vehicle Lienar Velocity Derivative](#3-vehicle-linear-velocity-derivative)
+- [4. Vehicle Orientation Derivative](#4-vehicle-orientation-derivative)
+- [5. Vehicle Position Derivative](#5-vehicle-position-derivative)
+
+## 1. Motors Angular Velocity Derivative
+
+Each motor can be modeled as a first order system, with a time constant $\tau$, a maximum angular velocity $\omega_{max}$ and a minimum angular velocity $\omega_{min}$:
+
+$$ \frac{d\omega_m}{dt} = \frac{1}{\tau} \cdot (\omega_{m,des} - \omega_m) $$
+
+Where:
+- $\omega_{m,des}$ is the desired angular velocity of the motor between $\omega_{min}$ and $\omega_{max}$.
+- $\omega_m$ is the angular velocity of the motor.
+- $\tau$ is the time constant of the motor dynamics.
+
+## 2. Vehicle Angular Velocity Derivative
+
+Motors angular velocity changes produce a torque on the quadrotor. Also, environment forces and moments produce a torque too. 
+
+The angular momentum of a rigid body is given by the product of the inertia matrix and the angular velocity vector:
+
+$$ L = I \cdot \omega_{B} $$
+
+Where:
+- $L$ is the angular momentum of the quadrotor
+- $I$ is the inertia matrix of the quadrotor
+- $\\omega_{B}$ is the angular velocity of the quadrotor in the body frame
+
+Due to the Coriolis effect (or gyroscopic torque), the angular momentum derivative is:
+
+$$ \frac{dL}{dt} = I \cdot \frac{d\omega}{dt} + \omega_{B} \times (I \cdot \omega_{B}) $$
+
+Also, the angular momentum derivative is equal to the sum of all external moments acting on the rigid body:
+
+$$ \frac{dL}{dt} = I \cdot \frac{d\omega}{dt} =  \sum_{i=1}^{n} \tau_i $$
+
+Where:
+- $\tau_i$ is the moment vector produced by the $i$-th external force or moment
+
+Reordering the terms, the angular velocity derivative can be calculated as:
+
+$$ \frac{d\omega}{dt} = I^{-1} \cdot [\sum_{i=1}^{n} \tau_i - \omega_{B} \times (I \cdot \omega_{B})] $$
+
+The sum of all external moments acting on the rigid body is exposed in the previous section.
+
+## 3. Vehicle Linear Velocity Derivative
+
+The velocity is calculated using the acceleration:
+
+$$ \dot{\mathbf{v}} = \mathbf{a} $$
+
+Where:
+- $\mathbf{a}$ is the acceleration of the quadrotor.
+
+The acceleration is calculated using Newton's second law of motion:
+
+$$ \mathbf{a} = \frac{1}{m} \cdot \mathbf{F} $$
+
+Where:
+- $m$ is the mass of the quadrotor.
+- $\mathbf{F}$ is the total force applied to the quadrotor.
+
+The total force applied to the quadrotor is the sum of the forces applied to the quadrotor by the rotors and the forces applied to the quadrotor by the environment, exposed in the previous section.
+
+
+## 4. Vehicle Orientation Derivative
+
+The attitude derivate is calculated using the angular velocity (quaternion derivative):
 
 $$ \dot{\mathbf{q}} = \frac{1}{2} \cdot \mathbf{q} \times \mathbf{\omega} $$
 
@@ -381,7 +674,8 @@ Where:
 - $\mathbf{q}$ is the attitude of the quadrotor.
 - $\mathbf{\omega}$ is the angular velocity of the quadrotor.
 
-### Position Derivative
+
+## 5. Vehicle Position Derivative
 
 The position is calculated using the velocity:
 
@@ -389,3 +683,178 @@ $$ \dot{\mathbf{p}} = \mathbf{v} $$
 
 Where:
 - $\mathbf{v}$ is the velocity of the quadrotor.
+
+
+
+# Quadrotor Flight Controller
+The objetive of the flight controller is to calculate the desired angular velocity of each motor. As mentioned in actuator section, the are severals way to send commands to quadrotor, but flight controllers convert them to angular velocity of each motor.
+
+In this project, a flight controller is implemented to convert from ACRO commands (thrust and angular velocity) to angular velocity of each motor.
+
+$$ \mathbf{Acro} = [\mathbf{T}, \omega_x, \omega_y, \omega_z] \implies \mathbf{Motor} = [\omega_1, \omega_2, \omega_3, \omega_4] $$
+
+In dynamics section, the relation between the forces and moments applied to the quadrotor and the angular velocity of each motor is exposed. The flight controller must calculate the desired forces and moments applied to the quadrotor to achieve the reference ACRO commands, and convert them into desired angular velocity of each motor.
+
+For that, the following steps are performed:
+
+#### 1. Convert ACRO commands into desired forces
+
+The thrust command in vehicle frame is converted into desired forces in vehicle frame:
+
+$$
+\begin{bmatrix}
+F_x \\
+F_y \\
+F_z
+\end{bmatrix}_{B}
+=
+\begin{bmatrix}
+0 & 0 & 0 \\
+0 & 0 & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+0 \\
+0 \\
+T_{ref}
+\end{bmatrix}_{B}
+$$
+
+### 2. Convert ACRO commands into desired angular velocity derivative
+
+The angular velocity command in vehicle frame is converted into desired angular velocity derivate (angular acceleration) in vehicle frame using a proportional controller:
+
+$$
+\begin{bmatrix}
+\dot{\omega_{x,des}} \\
+\dot{\omega_{y,des}} \\
+\dot{\omega_{z,des}}
+\end{bmatrix}_{B}
+=
+\begin{bmatrix}
+K_{\omega_x} & 0 & 0 \\
+0 & K_{\omega_y} & 0 \\
+0 & 0 & K_{\omega_z}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_{x,ref} - \omega_{x,state} \\
+\omega_{y,ref} - \omega_{y,state} \\
+\omega_{z,ref} - \omega_{z,state}
+\end{bmatrix}_{B}
+$$
+
+Where:
+- $K_{\omega_x}$, $K_{\omega_y}$ and $K_{\omega_z}$ are the proportional gains of the controller.
+
+### 3. Convert desired angular velocity into desired moments
+
+As exposed in kinematics section, the total moment applied to the quadrotor is related to the angular velocity of the rigid body, the angular velocity derivative and the inertia matrix of the quadrotor:
+
+$$
+\begin{bmatrix}
+\tau_{x,ref} \\
+\tau_{y,ref} \\
+\tau_{z,ref}
+\end{bmatrix}_{B}
+=
+I
+\cdot
+\begin{bmatrix}
+\dot{\omega_{x,des}} \\
+\dot{\omega_{y,des}} \\
+\dot{\omega_{z,des}}
+\end{bmatrix}_{B}
++
+\begin{bmatrix}
+\omega_{x,ref} \\
+\omega_{y,ref} \\
+\omega_{z,ref}
+\end{bmatrix}_{B}
+\times
+I
+\cdot
+\begin{bmatrix}
+\omega_{x,ref} \\
+\omega_{y,ref} \\
+\omega_{z,ref}
+\end{bmatrix}_{B}
+$$
+
+### 4. Convert desired forces and moments into desired angular velocity of each motor
+
+Now have the desired force $F_z$ and the desired moments $[\tau_{x,ref},\tau_{y,ref},\tau_{z,ref}]$ applied to the quadrotor. The desired angular velocity of each motor is calculated using the relation between the forces and moments applied to the quadrotor and the angular velocity of each motor, exposed in dynamics section:
+
+$$
+\begin{bmatrix}
+F_z \\
+\tau_{x,ref} \\
+\tau_{y,ref} \\
+\tau_{z,ref}
+\end{bmatrix}_{B}
+=
+\begin{bmatrix}
+\mathbf{T_{TRW_{z}}} \\
+\mathbf{T_{FTW}}
+\end{bmatrix}_{B}
+\cdot
+\begin{bmatrix}
+\omega_{1,ref} \\
+\omega_{2,ref} \\
+\omega_{3,ref} \\
+\omega_{4,ref}
+\end{bmatrix}_{B}
+$$
+
+
+$$
+\begin{bmatrix}
+F_z \\
+\tau_{x,ref} \\
+\tau_{y,ref} \\
+\tau_{z,ref}
+\end{bmatrix}_{B}
+=
+\begin{bmatrix}
+k_f & -k_f & k_f & -k_f \\
+0 & d_y \cdot k_f & 0 & -d_y \cdot k_f \\
+-d_x \cdot k_f & 0 & d_x \cdot k_f & 0 \\
+k_t & -k_t & k_t & -k_t
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+\omega_{1,ref} \\
+\omega_{2,ref} \\
+\omega_{3,ref} \\
+\omega_{4,ref}
+\end{bmatrix}_{B}
+$$
+
+Therefore, solving the desired angular velocity of each motor:
+
+$$
+\begin{bmatrix}
+\omega_{1,ref} \\
+\omega_{2,ref} \\
+\omega_{3,ref} \\
+\omega_{4,ref}
+\end{bmatrix}_{B}
+=
+\begin{bmatrix}
+k_f & -k_f & k_f & -k_f \\
+0 & d_y \cdot k_f & 0 & -d_y \cdot k_f \\
+-d_x \cdot k_f & 0 & d_x \cdot k_f & 0 \\
+k_t & -k_t & k_t & -k_t
+\end{bmatrix}^{-1}
+\cdot
+\begin{bmatrix}
+F_z \\
+\tau_{x,ref} \\
+\tau_{y,ref} \\
+\tau_{z,ref}
+\end{bmatrix}_{B}
+$$
+
+# Inertial Measurement Unit
+TBD

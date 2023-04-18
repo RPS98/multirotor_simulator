@@ -52,36 +52,44 @@ using namespace quadrotor;
  * @param force_process_noise_auto_correlation Process noise auto-correlation for forces
  * @param gravity Gravity vector in m/s^2
  */
-Model::Model(float thrust_coefficient,
-             float torque_coefficient,
-             float min_motor_speed,
-             float max_motor_speed,
-             float motor_time_constant,
-             float motor_rotational_inertia,
+Model::Model(float motor_thrust_coefficient,
+             float motor_torque_coefficient,
              float motor_dx,
              float motor_dy,
+             float motor_min_speed,
+             float motor_max_speed,
+             float motor_time_constant,
+             float motor_rotational_inertia,
              float vehicle_mass,
              const Eigen::Matrix3f& vehicle_inertia,
-             float aero_moment_coefficient,
-             float drag_coefficient,
+             float vehicle_drag_coefficient,
+             float vehicle_aero_moment_coefficient,
+             const Eigen::Vector3f& gravity,
              float moment_process_noise_auto_correlation,
-             float force_process_noise_auto_correlation,
-             const Eigen::Vector3f& gravity)
-    : vehicle_mass(vehicle_mass), vehicle_inertia(vehicle_inertia),
-      aero_moment_coefficient(aero_moment_coefficient),
-      vehicle_drag_coefficient(vehicle_drag_coefficient),
+             float force_process_noise_auto_correlation)
+    : motor_thrust_coefficient(motor_thrust_coefficient),
+      motor_torque_coefficient(motor_torque_coefficient), motor_min_speed(motor_min_speed),
+      motor_max_speed(motor_max_speed), motor_time_constant(motor_time_constant),
+      motor_rotational_inertia(motor_rotational_inertia), vehicle_mass(vehicle_mass),
+      vehicle_inertia(vehicle_inertia), vehicle_drag_coefficient(vehicle_drag_coefficient),
+      vehicle_aero_moment_coefficient(vehicle_aero_moment_coefficient), gravity(gravity),
       moment_process_noise_auto_correlation(moment_process_noise_auto_correlation),
-      force_process_noise_auto_correlation(force_process_noise_auto_correlation), gravity(gravity) {
-  motors_frame_thrust_coefficient_matrix << 0.0f, motor_dy * thrust_coefficient, 0.0f,
-      -motor_dy * thrust_coefficient, -motor_dx * thrust_coefficient, 0.0f,
-      motor_dx * thrust_coefficient, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f;
+      force_process_noise_auto_correlation(force_process_noise_auto_correlation) {
+  // Frame transformations
+  motors_frame_thrust_coefficient_matrix << 0.0f, motor_dy * motor_thrust_coefficient, 0.0f,
+      -motor_dy * motor_thrust_coefficient, -motor_dx * motor_thrust_coefficient, 0.0f,
+      motor_dx * motor_thrust_coefficient, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f;
 
   motors_frame_torque_coefficient_matrix << 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-      torque_coefficient, -torque_coefficient, torque_coefficient, -torque_coefficient;
+      motor_torque_coefficient, -motor_torque_coefficient, motor_torque_coefficient,
+      -motor_torque_coefficient;
 
   motors_frame_inertia_matrix << 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
       motor_rotational_inertia, -motor_rotational_inertia, motor_rotational_inertia,
       -motor_rotational_inertia;
+
+  // Random number generator
+  random_number_generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
 }
 
 Model::~Model() {
@@ -187,7 +195,7 @@ Eigen::Vector3f Model::get_drag_force(const float _vehicle_drag_coefficient,
  */
 inline Eigen::Vector3f Model::get_aerodynamic_moment(
     const Eigen::Vector3f& vehicle_angular_velocity) const {
-  return get_aerodynamic_moment(aero_moment_coefficient, vehicle_angular_velocity);
+  return get_aerodynamic_moment(vehicle_aero_moment_coefficient, vehicle_angular_velocity);
 }
 
 /**
@@ -206,10 +214,10 @@ Eigen::Vector3f Model::get_aerodynamic_moment(const float vehicle_aerodynamic_co
 
 /**
  * @brief Get the motor torque in the body frame produced by the motors
- * 
+ *
  * @param motors_angular_velocity Angular velocity of the motors in rad/s
  * @param motors_angular_acceleration Angular acceleration of the motors in rad/s^2
- * 
+ *
  * @return Eigen::Vector3f Motor torque in the body frame
  */
 Eigen::Vector3f Model::get_motor_torque(const Eigen::Vector4f& motors_angular_velocity,

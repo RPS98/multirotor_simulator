@@ -36,6 +36,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <chrono>
 #include <random>
 #include <vector>
 
@@ -43,21 +44,21 @@ namespace quadrotor {
 
 class Model {
 public:
-  Model(float thrust_coefficient,
-        float torque_coefficient,
-        float min_motor_speed,
-        float max_motor_speed,
-        float motor_time_constant,
-        float motor_rotational_inertia,
+  Model(float motor_thrust_coefficient,
+        float motor_torque_coefficient,
         float motor_dx,
         float motor_dy,
+        float motor_min_speed,
+        float motor_max_speed,
+        float motor_time_constant,
+        float motor_rotational_inertia,
         float vehicle_mass,
         const Eigen::Matrix3f& vehicle_inertia,
-        float aero_moment_coefficient,
-        float drag_coefficient                      = 0.0f,
+        float vehicle_drag_coefficient              = 0.0f,
+        float vehicle_aero_moment_coefficient       = 0.0f,
+        const Eigen::Vector3f& gravity              = Eigen::Vector3f(0.0f, 0.0f, -9.81f),
         float moment_process_noise_auto_correlation = 0.0f,
-        float force_process_noise_auto_correlation  = 0.0f,
-        const Eigen::Vector3f& gravity              = Eigen::Vector3f(0.0, 0.0, -9.81f));
+        float force_process_noise_auto_correlation  = 0.0f);
 
   ~Model();
 
@@ -72,19 +73,19 @@ public:
   // Motors properties
   float motor_thrust_coefficient;
   float motor_torque_coefficient;
-  float motor_min_speed;
+  float motor_min_speed = 0.0f;
   float motor_max_speed;
   float motor_time_constant;
   float motor_rotational_inertia;
 
   // Vehicle properties
-  float vehicle_drag_coefficient;   // N/(m/s)
-  float aero_moment_coefficient;    // N · m/(rad/s)^2
-  float vehicle_mass;               // kg
-  Eigen::Matrix3f vehicle_inertia;  // kg · m^2
+  float vehicle_mass;                            // kg
+  float vehicle_drag_coefficient        = 0.0f;  // N/(m/s)
+  float vehicle_aero_moment_coefficient = 0.0f;  // N · m/(rad/s)^2
+  Eigen::Matrix3f vehicle_inertia;               // kg · m^2
 
   // Environment properties
-  Eigen::Vector3f gravity;  // m/s^2
+  Eigen::Vector3f gravity = Eigen::Vector3f(0.0f, 0.0f, -9.81f);  // m/s^2
 
   // Noise properties
   std::default_random_engine random_number_generator;  // Random number generator
@@ -117,6 +118,24 @@ public:
   Eigen::Vector3f get_motor_torque(const Eigen::Vector4f& motors_angular_velocity,
                                    const Eigen::Vector4f& motors_angular_acceleration) const;
 
+  // Getters
+  inline float get_mass() const { return this->mass; }
+
+  inline Eigen::Matrix3f get_vehicle_inertia() const { return this->vehicle_inertia; }
+
+  inline float get_motors_thrust_coefficient() const { return this->motor_thrust_coefficient; }
+
+  inline Eigen::Matrix<float, 3, 4> get_motors_frame_thrust_coefficient_matrix() const {
+    return this->motors_frame_thrust_coefficient_matrix;
+  };
+
+  inline Eigen::Matrix<float, 3, 4> get_motors_frame_torque_coefficient_matrix() const {
+    return this->motors_frame_torque_coefficient_matrix;
+  };
+
+  inline Eigen::Matrix<float, 3, 4> get_motors_frame_inertia_matrix() const {
+    return this->motors_frame_inertia_matrix;
+  };
 };  // class Model
 
 }  // namespace quadrotor
