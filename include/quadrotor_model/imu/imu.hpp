@@ -71,6 +71,8 @@ public:
                        Eigen::Vector3f& angular_velocity,
                        Eigen::Vector3f& linear_acceleration) const;
 
+  void get_measurement(state::Kinematics& measurement) const;
+
   // Setters
   void set_random_seed(const int seed);
 

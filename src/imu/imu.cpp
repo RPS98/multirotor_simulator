@@ -214,6 +214,20 @@ void IMU::get_measurement(Eigen::Vector3f& position,
 }
 
 /**
+ * @brief Return the IMU measurement.
+ *
+ * @param measurement Output state::Kinematics measurement integrated from the IMU in the world
+ * frame.
+ */
+void IMU::get_measurement(state::Kinematics& measurement) const {
+  measurement.position            = position_;
+  measurement.orientation         = orientation_;
+  measurement.linear_velocity     = linear_velocity_;
+  measurement.angular_velocity    = angular_velocity_;
+  measurement.linear_acceleration = linear_acceleration_;
+}
+
+/**
  * @brief Process the IMU bias.
  *
  * @param dt Time step.
@@ -297,8 +311,8 @@ void IMU::integrate_measurement(const float dt) {
  * @brief Update the IMU state
  *
  * @param dt Delta time in seconds
- * @param specific_force Total force acting on the IMU without gravity in world frame.
- * @param vehicle_angular_velocity Angular velocity of the vehicle in the world frame.
+ * @param specific_force Total force acting on the IMU without gravity in body frame.
+ * @param vehicle_angular_velocity Angular velocity of the vehicle in the body frame.
  */
 void IMU::update(const float dt,
                  const Eigen::Vector3f specific_force,

@@ -49,7 +49,9 @@ public:
   Dynamics(std::shared_ptr<Model> model, std::shared_ptr<State> state);
   ~Dynamics();
 
-  void process_euler_explicit(const actuation::MotorW &actuation, const float dt);
+  void process_euler_explicit(const actuation::MotorW &actuation,
+                              const float dt,
+                              const Eigen::Vector3f &external_force);
 
 private:
   std::shared_ptr<Model> model_;
@@ -95,6 +97,7 @@ private:
       const Eigen::Vector3f &vehicle_linear_velocity,
       const Eigen::Vector3f &gravity_force,
       const Eigen::Vector3f &stochastic_force,
+      const Eigen::Vector3f &external_force,
       Eigen::Vector3f &vehicle_total_force);
 
   // void motor_dynamics(Eigen::Vector4f &desired_angular_velocity);

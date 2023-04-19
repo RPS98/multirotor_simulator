@@ -35,7 +35,16 @@
 
 using namespace quadrotor;
 
-FlightController::FlightController(std::shared_ptr<Model> model) { model_ = model; }
+FlightController::FlightController(std::shared_ptr<Model> model,
+                                   Eigen::Vector3f kp,
+                                   Eigen::Vector3f ki = Eigen::Vector3f(0.0, 0.0, 0.0),
+                                   Eigen::Vector3f kd = Eigen::Vector3f(0.0, 0.0, 0.0))
+    : model_(model) {
+  Eigen::Vector3d _kp = kp.cast<double>();
+  Eigen::Vector3d _ki = ki.cast<double>();
+  Eigen::Vector3d _kd = kd.cast<double>();
+  pid_controller_.setGains(_kp, _ki, _kd);
+}
 
 FlightController::~FlightController() {
   // TODO

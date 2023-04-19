@@ -46,7 +46,10 @@ namespace quadrotor {
 
 class FlightController {
 public:
-  FlightController(std::shared_ptr<Model> model);
+  FlightController(std::shared_ptr<Model> model,
+                   Eigen::Vector3f kp,
+                   Eigen::Vector3f ki,
+                   Eigen::Vector3f kd);
   ~FlightController();
 
 public:

@@ -41,13 +41,75 @@
 #include "common/model.hpp"
 #include "common/state.hpp"
 #include "dynamics/dynamics.hpp"
+#include "flight_controller/flight_controller.hpp"
+#include "imu/imu.hpp"
 
 namespace quadrotor {
 
+struct quadrotor_params {
+  /* Quadrotor Parameters */
+  float floor_height = 0.0f;
+
+  /* Model Parameters */
+  float motor_thrust_coefficient;
+  float motor_torque_coefficient;
+  float motor_dx;
+  float motor_dy;
+  float motor_min_speed;
+  float motor_max_speed;
+  float motor_time_constant;
+  float motor_rotational_inertia;
+  float vehicle_mass;
+  const Eigen::Matrix3f& vehicle_inertia;
+  float vehicle_drag_coefficient              = 0.0f;
+  float vehicle_aero_moment_coefficient       = 0.0f;
+  const Eigen::Vector3f& gravity              = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
+  float moment_process_noise_auto_correlation = 0.0f;
+  float force_process_noise_auto_correlation  = 0.0f;
+
+  /* State */
+  State initial_state;
+
+  /* Flight Controller Parameters */
+  Eigen::Vector3f kp;
+  Eigen::Vector3f ki = Eigen::Vector3f::Zero();
+  Eigen::Vector3f kd = Eigen::Vector3f::Zero();
+
+  /* IMU Parameters */
+  float gyro_noise_var                 = 0.0f;
+  float accel_noise_var                = 0.0f;
+  float gyro_bias_noise_autocorr_time  = 0.0f;
+  float accel_bias_noise_autocorr_time = 0.0f;
+  Eigen::Quaternionf imu_orientation   = Eigen::Quaternionf::Identity();
+};
+
 class Quadrotor {
 public:
-  Quadrotor();
+  Quadrotor(quadrotor_params& params);
   ~Quadrotor();
+
+  void update(float dt, const actuation::Acro& actuation);
+
+  inline void get_state(State& state) const { state = *state_; };
+
+  inline void get_imu_measurement(state::Kinematics& measurement) const {
+    imu_->get_measurement(measurement);
+  };
+
+public:
+  // Shared variables
+  std::shared_ptr<Model> model_;
+  std::shared_ptr<State> state_;
+  std::shared_ptr<Dynamics> dynamics_;
+  std::shared_ptr<FlightController> flight_controller_;
+  std::shared_ptr<IMU> imu_;
+
+private:
+  actuation::MotorW actuation_motor_w_;
+
+  float floor_height_;
+  Eigen::Vector3f external_force_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f floor_force_    = Eigen::Vector3f::Zero();
 };  // class Quadrotor
 
 }  // namespace quadrotor

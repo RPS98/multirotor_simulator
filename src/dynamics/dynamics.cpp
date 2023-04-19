@@ -44,7 +44,9 @@ Dynamics::~Dynamics() {
   // TODO
 }
 
-void Dynamics::process_euler_explicit(const actuation::MotorW &actuation, const float dt) {
+void Dynamics::process_euler_explicit(const actuation::MotorW &actuation,
+                                      const float dt,
+                                      const Eigen::Vector3f &external_force) {
   Eigen::Vector4f motor_angular_velocity_desired = actuation.angular_velocity;
   *last_state_                                   = *state_;
 
@@ -71,7 +73,7 @@ void Dynamics::process_euler_explicit(const actuation::MotorW &actuation, const 
       model_->mass, state_->kinematics.orientation, model_->motor_thrust_coefficient,
       state_->actuators.motor_angular_velocity, model_->vehicle_drag_coefficient,
       state_->kinematics.linear_velocity, model_->get_gravity_force(),
-      model_->get_stochastic_force(), state_->dynamics.force);
+      model_->get_stochastic_force(), external_force, state_->dynamics.force);
 
   Eigen::Vector4f orientation_derivative = get_vehicle_orientation_derivative(
       state_->kinematics.orientation, state_->kinematics.angular_velocity);
@@ -174,6 +176,8 @@ inline Eigen::Vector4f Dynamics::get_vehicle_orientation_derivative(
  * @param vehicle_linear_velocity Vehicle linear velocity in earth frame
  * @param gravity_force Gravity force in earth frame
  * @param stochastic_force Stochastic force in earth frame
+ * @param external_force External force in earth frame
+ * @param vehicle_total_force Output vehicle total force in earth frame
  *
  * @return Eigen::Vector3f Vehicle linear velocity derivative
  */
@@ -186,6 +190,7 @@ Eigen::Vector3f Dynamics::get_vehicle_linear_velocity_derivative(
     const Eigen::Vector3f &vehicle_linear_velocity,
     const Eigen::Vector3f &gravity_force,
     const Eigen::Vector3f &stochastic_force,
+    const Eigen::Vector3f &external_force,
     Eigen::Vector3f &vehicle_total_force) {
   // Compute the thrust force in earth frame
   Eigen::Vector3f thrust_force =
@@ -196,7 +201,8 @@ Eigen::Vector3f Dynamics::get_vehicle_linear_velocity_derivative(
       Model::get_drag_force(vehicle_drag_coefficient, vehicle_linear_velocity);
 
   // Compute the total force
-  vehicle_total_force = thrust_force + gravity_force + drag_force + stochastic_force;
+  vehicle_total_force =
+      thrust_force + gravity_force + drag_force + stochastic_force + external_force;
 
   // Compute the linear velocity derivative
   return vehicle_total_force / mass;
