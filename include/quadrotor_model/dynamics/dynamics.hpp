@@ -80,7 +80,7 @@ private:
       const Eigen::Vector3f &vehicle_stochastic_force,
       Eigen::Vector3f &vehicle_total_torque);
 
-  static Eigen::Vector3f get_vehicle_position_derivative(const Eigen::Vector3f &lineal_velocity);
+  static Eigen::Vector3f get_vehicle_position_derivative(const Eigen::Vector3f &linear_velocity);
 
   static Eigen::Vector4f get_vehicle_orientation_derivative(
       const Eigen::Quaternionf &orientation,

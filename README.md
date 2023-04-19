@@ -1,57 +1,54 @@
-# Quadrotor Model
-C++ Quadrotor Model
+# Quadrotor Model in C++
 
 The purpose of this repository is to provide a quadrotor model, implemented in c++.
 For that, the implementation of the quadrotor dynamics, inertial measurement unit (IMU) and flight controller has been done.
 
-
-
-The objective of the model is that given a state of the quadrotor and an action, to calculate the evolution of the state. For this purpose, the state, actuation and dynamics of the system must be defined.
-
-The code flow is the following:
-1. The system parameters are initialized, and the physical constants of the quadrotor are defined.
-1. The main loop is entered where the following is performed:
-    1. Quadrotor commands are updated.
-    1. The behavior of the quadrotor is simulated during a time interval, updating its state (position, velocity, acceleration, orientation, angular velocity, etc.) based on the previous state and the forces and moments acting on it.
-        1. Compute the angular speed reached by the motors based on the desired angular speed and the motor dynamics.
-        2. Compute the forces and moments applied by the motors.
-        4. Compute the forces and moments applied by external forces.
-        5. Compute the acceleration and angular acceleration of the quadrotor.
-        6. Compute the new state of the quadrotor.
-
-
-## Table of Contents  
+## Table of Contents
 - [Quadrotor State](#quadrotor-state)
-    - [Kinematics](#kinematics)
-    - [Dynamics](#dynamics)
-    - [Actuation](#actuation)
+  - [Kinematics](#kinematics)
+  - [Dynamics](#dynamics)
+  - [Actuation](#actuation)
+- [Quadrotor Actuation](#quadrotor-actuation)
 - [Quadrotor Dynamics](#quadrotor-dynamics)
-    - [1. Forces and Moments due to Motors at Motor Frame](#1-forces-and-moments-due-to-motors-at-motor-frame)
-    - [2. Forces and Moments due to Motors at Body Frame](#2-forces-and-moments-due-to-motors-at-body-frame)
-        - [2.1 Forces](#21-forces)
-        - [2.2 Moments](#22-moments)
-            - [2.2.1 Moment due to Thrust Force](#221-moment-due-to-thrust-force)
-            - [2.2.2 Moment due to Torque](#222-moment-due-to-torquemoment-due-to-torque)
-                - [2.2.2.1 Moment due to Motor Rotation](#2221-moment-due-to-motor-rotation)
-                - [2.2.2.2 Moment due to Motor Inertia](#2222-moment-due-to-motor-inertia)
-            - [Summary of Moments](#summary-of-moments)
-        - [2.3 Summary of Forces and Moments](#23-summary-of-forces-and-moments-due-to-motors-at-body-frame)
-    - [3. Forces and Moments due to Environment](#3-forces-and-moments-due-to-environment)
-        - [3.1 3.1 Forces due to Environment](#31-forces-due-to-environment)
-            - [3.1.1 Gravity Force](#311-gravity-force)
-            - [3.1.2 Aerodynamic Drag](#312-aerodynamic-drag)
-            - [3.1.3 Stochastic Force](#313-stochastic-force)
-        - [3.2 Moments due to Environment](#32-moments-due-to-environment)
-            - [3.2.1 Aerodynamic Drag](#321-aerodynamic-drag)
-            - [3.2.2 Stochastic Moment](#322-stochastic-moment)
+  - [Quadrotor Dynamics Table of Contents](#quadrotor-dynamics-table-of-contents)
+  - [1. Forces and Moments due to Motors at Motor Frame](#1-forces-and-moments-due-to-motors-at-motor-frame)
+  - [2. Forces and Moments due to Motors at Body Frame](#2-forces-and-moments-due-to-motors-at-body-frame)
+    - [2.1 Forces](#21-forces)
+    - [2.2 Moments](#22-moments)
+      - [2.2.1 Moment due to Thrust Force](#221-moment-due-to-thrust-force)
+      - [2.2.2 Moment due to Torque](#222-moment-due-to-torque)
+        - [2.2.2.1 Moment due to Motor Rotation](#2221-moment-due-to-motor-rotation)
+        - [2.2.2.2 Moment due to Motor Inertia](#2222-moment-due-to-motor-inertia)
+      - [Summary of Moments](#summary-of-moments)
+    - [2.3 Summary of Forces and Moments due to Motors at Body Frame](#23-summary-of-forces-and-moments-due-to-motors-at-body-frame)
+  - [3. Forces and Moments due to Environment](#3-forces-and-moments-due-to-environment)
+    - [3.1 Forces due to Environment](#31-forces-due-to-environment)
+      - [3.1.1 Gravity Force](#311-gravity-force)
+      - [3.1.2 Aerodynamic Drag](#312-aerodynamic-drag)
+      - [3.1.3 Stochastic Force](#313-stochastic-force)
+    - [3.2 Moments due to Environment](#32-moments-due-to-environment)
+      - [3.2.1 Aerodynamic Drag](#321-aerodynamic-drag)
+      - [3.2.2 Stochastic Moment](#322-stochastic-moment)
 - [Quadrotor Kinematics](#quadrotor-kinematics)
-    - [1. Motors Angular Velocity Derivative](#1-motors-angular-velocity-derivative)
-    - [2. Vehicle Angular Velocity Derivative](#2-vehicle-angular-velocity-derivative)
-    - [3. Vehicle Lienar Velocity Derivative](#3-vehicle-linear-velocity-derivative)
-    - [4. Vehicle Orientation Derivative](#4-vehicle-orientation-derivative)
-    - [5. Vehicle Position Derivative](#5-vehicle-position-derivative)
+  - [Quadrotor Kinematics Table of Contents](#quadrotor-kinematics-table-of-contents)
+  - [1. Motors Angular Velocity Derivative](#1-motors-angular-velocity-derivative)
+  - [2. Vehicle Angular Velocity Derivative](#2-vehicle-angular-velocity-derivative)
+  - [3. Vehicle Linear Velocity Derivative](#3-vehicle-linear-velocity-derivative)
+  - [4. Vehicle Orientation Derivative](#4-vehicle-orientation-derivative)
+  - [5. Vehicle Position Derivative](#5-vehicle-position-derivative)
 - [Quadrotor Flight Controller](#quadrotor-flight-controller)
+  - [1. Convert ACRO commands into desired forces](#1-convert-acro-commands-into-desired-forces)
+  - [2. Convert ACRO commands into desired angular velocity derivative](#2-convert-acro-commands-into-desired-angular-velocity-derivative)
+  - [3. Convert desired angular velocity into desired moments](#3-convert-desired-angular-velocity-into-desired-moments)
+  - [4. Convert desired forces and moments into desired angular velocity of each motor](#4-convert-desired-forces-and-moments-into-desired-angular-velocity-of-each-motor)
 - [Inertial Measurement Unit](#inertial-measurement-unit)
+  - [Accelerometer](#accelerometer)
+  - [Gyroscope](#gyroscope)
+  - [IMU Integration](#imu-integration)
+    - [Linear acceleration](#linear-acceleration)
+    - [Angular velocity](#angular-velocity)
+    - [Orientation](#orientation)
+    - [Position](#position)
 
 # Quadrotor State
 
@@ -137,22 +134,22 @@ The quadrotor change it state due to the forces and moments applied to it. They 
 ## Quadrotor Dynamics Table of Contents  
 - [1. Forces and Moments due to Motors at Motor Frame](#1-forces-and-moments-due-to-motors-at-motor-frame)
 - [2. Forces and Moments due to Motors at Body Frame](#2-forces-and-moments-due-to-motors-at-body-frame)
-    - [2.1 Forces](#21-forces)
-    - [2.2 Moments](#22-moments)
-        - [2.2.1 Moment due to Thrust Force](#221-moment-due-to-thrust-force)
-        - [2.2.2 Moment due to Torque](#222-moment-due-to-torquemoment-due-to-torque)
-            - [2.2.2.1 Moment due to Motor Rotation](#2221-moment-due-to-motor-rotation)
-            - [2.2.2.2 Moment due to Motor Inertia](#2222-moment-due-to-motor-inertia)
-        - [Summary of Moments](#summary-of-moments)
-    - [2.3 Summary of Forces and Moments](#23-summary-of-forces-and-moments-due-to-motors-at-body-frame)
+  - [2.1 Forces](#21-forces)
+  - [2.2 Moments](#22-moments)
+    - [2.2.1 Moment due to Thrust Force](#221-moment-due-to-thrust-force)
+    - [2.2.2 Moment due to Torque](#222-moment-due-to-torque)
+      - [2.2.2.1 Moment due to Motor Rotation](#2221-moment-due-to-motor-rotation)
+      - [2.2.2.2 Moment due to Motor Inertia](#2222-moment-due-to-motor-inertia)
+    - [Summary of Moments](#summary-of-moments)
+  - [2.3 Summary of Forces and Moments due to Motors at Body Frame](#23-summary-of-forces-and-moments-due-to-motors-at-body-frame)
 - [3. Forces and Moments due to Environment](#3-forces-and-moments-due-to-environment)
-    - [3.1 3.1 Forces due to Environment](#31-forces-due-to-environment)
-        - [3.1.1 Gravity Force](#311-gravity-force)
-        - [3.1.2 Aerodynamic Drag](#312-aerodynamic-drag)
-        - [3.1.3 Stochastic Force](#313-stochastic-force)
-    - [3.2 Moments due to Environment](#32-moments-due-to-environment)
-        - [3.2.1 Aerodynamic Drag](#321-aerodynamic-drag)
-        - [3.2.2 Stochastic Moment](#322-stochastic-moment)
+  - [3.1 Forces due to Environment](#31-forces-due-to-environment)
+    - [3.1.1 Gravity Force](#311-gravity-force)
+    - [3.1.2 Aerodynamic Drag](#312-aerodynamic-drag)
+    - [3.1.3 Stochastic Force](#313-stochastic-force)
+  - [3.2 Moments due to Environment](#32-moments-due-to-environment)
+    - [3.2.1 Aerodynamic Drag](#321-aerodynamic-drag)
+    - [3.2.2 Stochastic Moment](#322-stochastic-moment)
 
 
 ## 1. Forces and Moments due to Motors at Motor Frame
@@ -878,4 +875,135 @@ F_z \\
 ```
 
 # Inertial Measurement Unit
-TBD
+
+A Inertial Measurement Unit (IMU) with an accelerometer and a gyroscope is used to measure the linear acceleration and angular velocity of the quadrotor. 
+
+The IMU is mounted on the quadrotor and measures the acceleration and angular velocity in the body frame.
+
+### **Accelerometer**
+
+Measures the linear acceleration in the body frame. The accelerometer is calibrated to remove the gravity component and the bias. The accelerometer is also used to measure the linear acceleration in the inertial frame. Been $F_s$ the specific force, so that $F_s = F - g$, where $g$ is the gravity vector, applied in the body frame.
+
+```math
+\mathbf{a}
+=
+\mathbf{R_{b}^{IMU}}^{-1}
+\cdot
+\mathbf{Fs}
++
+\mathbf{BIAS}
++
+\mathbf{NOISE}
+```
+
+where:
+- $\mathbf{a}$ is the linear acceleration measured by the accelerometer in the body frame.
+- $\mathbf{R_{b}^{IMU}}$ is the rotation matrix of the IMU frame to the body frame.
+- $\mathbf{F_{s}}$ is the specific force applied in the body frame whithout the gravity component.
+- $\mathbf{BIAS}$ is the bias of the accelerometer.
+- $\mathbf{NOISE}$ is the noise of the accelerometer.
+
+### **Gyroscope**
+
+Measures the angular velocity in the body frame. The gyroscope is calibrated to remove the bias. The gyroscope is also used to measure the angular velocity in the inertial frame.
+
+```math
+\mathbf{\omega}
+=
+\mathbf{R_{b}^{IMU}}^{-1}
+\cdot
+\mathbf{\omega_{b}}
++
+\mathbf{BIAS}
++
+\mathbf{NOISE}
+```
+
+where:
+- $\mathbf{\omega}$ is the angular velocity measured by the gyroscope in the body frame.
+- $\mathbf{R_{b}^{IMU}}$ is the rotation matrix of the IMU frame to the body frame.
+- $\mathbf{\omega_{b}}$ is the angular velocity in the body frame.
+- $\mathbf{BIAS}$ is the bias of the gyroscope.
+- $\mathbf{NOISE}$ is the noise of the gyroscope.
+
+### **IMU Integration**
+
+The IMU is integrated to estimate the state of the quadrotor. I is composed by the position, velocity, orientation and angular velocity of the quadrotor. The state is estimated using the accelerometer and the gyroscope.
+
+#### **Linear acceleration**
+
+The accelerometer measures the linear acceleration in the body frame. The linear acceleration in the world frame is calculated using the orientation of the quadrotor:
+
+```math
+\mathbf{a}_{w}
+=
+\mathbf{R_{w}^{b}}
+\cdot
+\mathbf{a}_{b}
+```
+
+where:
+- $\mathbf{a}_{w}$ is the linear acceleration in the world frame.
+- $\mathbf{R_{w}^{b}}$ is the rotation matrix from the body frame to the world frame.
+- $\mathbf{a}_{b}$ is the linear acceleration in the body frame.
+
+#### **Angular velocity**
+
+The gyroscope measures the angular velocity in the body frame. The angular velocity in the world frame is calculated using the orientation of the quadrotor:
+
+```math
+\mathbf{\omega}_{w}
+=
+\mathbf{R_{w}^{b}}
+\cdot
+\mathbf{\omega}_{b}
+```
+
+where:
+- $\mathbf{\omega}_{w}$ is the angular velocity in the world frame.
+- $\mathbf{R_{w}^{b}}$ is the rotation matrix from the body frame to the world frame.
+- $\mathbf{\omega}_{b}$ is the angular velocity in the body frame.
+
+#### **Orientation**
+
+The orientation of the quadrotor is estimated using the integration of the angular velocity:
+
+```math
+\mathbf{R_{w}^{b}}
+=
+\mathbf{R_{w}^{b}}_{t-1}
++
+\frac{1}{2}
+\cdot
+\mathbf{\omega}_{w}
+\cdot
+\Delta t
+```
+
+where:
+- $\mathbf{R_{w}^{b}}$ is the rotation matrix from the body frame to the world frame.
+- $\mathbf{R_{w}^{b}}_{t-1}$ is the rotation matrix from the body frame to the world frame at the previous time step.
+- $\mathbf{\omega}_{w}$ is the angular velocity in the world frame updated at the current time step.
+- $\Delta t$ is the time step.
+
+#### **Position**
+
+The position of the quadrotor is estimated using the integration of the linear acceleration:
+
+```math
+\mathbf{p}_{w}
+=
+\mathbf{p}_{w}
++
+\mathbf{v}_{w}
+\cdot
+\Delta t
+```
+
+where:
+- $\mathbf{p}_{w}$ is the position of the quadrotor in the world frame.
+- $\mathbf{v}_{w}$ is the velocity of the quadrotor in the world frame.
+- $\Delta t$ is the time step.
+
+
+

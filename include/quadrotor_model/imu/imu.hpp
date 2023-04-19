@@ -42,6 +42,7 @@
 #include "common/actuation.hpp"
 #include "common/model.hpp"
 #include "common/state.hpp"
+#include "common/utils.hpp"
 
 namespace quadrotor {
 
@@ -51,18 +52,24 @@ public:
       float accel_noise_var,
       float gyro_bias_noise_autocorr_time,
       float accel_bias_noise_autocorr_time,
+      Eigen::Quaternionf initial_world_orientation,
       Eigen::Quaternionf imu_orientation);
 
   ~IMU();
 
 public:
-  // Public methods
-  void process_bias(const float dt);
+  // Update
+  void update(const float dt,
+              const Eigen::Vector3f specific_force,
+              const Eigen::Vector3f vehicle_angular_velocity);
 
-  void get_measurement(const Eigen::Vector3f specific_force,
-                       const Eigen::Vector3f vehicle_angular_velocity,
-                       Eigen::Vector3f& gyro,
-                       Eigen::Vector3f& accel);
+  void get_measurement(Eigen::Vector3f& gyro, Eigen::Vector3f& accel) const;
+
+  void get_measurement(Eigen::Vector3f& position,
+                       Eigen::Quaternionf& orientation,
+                       Eigen::Vector3f& linear_velocity,
+                       Eigen::Vector3f& angular_velocity,
+                       Eigen::Vector3f& linear_acceleration) const;
 
   // Setters
   void set_random_seed(const int seed);
@@ -92,6 +99,14 @@ public:
   void get_variances(float& gyro_bias_var, float& accel_bias_var) const;
 
 private:
+  void process_bias(const float dt);
+
+  void process_measurement(const Eigen::Vector3f specific_force,
+                           const Eigen::Vector3f vehicle_angular_velocity);
+
+  void integrate_measurement(const float dt);
+
+private:
   // Noise properties
   std::default_random_engine random_number_generator_;  // Random number generator
   std::normal_distribution<float> standard_normal_distribution_ =
@@ -111,6 +126,17 @@ private:
   // Bias
   Eigen::Vector3f gyro_bias_  = Eigen::Vector3f::Zero();  // rad/s
   Eigen::Vector3f accel_bias_ = Eigen::Vector3f::Zero();  // m/s^2
+
+  // Measurement in body frame
+  Eigen::Vector3f gyro_  = Eigen::Vector3f::Zero();  // rad/s
+  Eigen::Vector3f accel_ = Eigen::Vector3f::Zero();  // m/s^2
+
+  // Integrated measurement in world frame
+  Eigen::Vector3f linear_acceleration_ = Eigen::Vector3f::Zero();         // m/s^2
+  Eigen::Vector3f linear_velocity_     = Eigen::Vector3f::Zero();         // m/s
+  Eigen::Vector3f angular_velocity_    = Eigen::Vector3f::Zero();         // rad/s
+  Eigen::Quaternionf orientation_      = Eigen::Quaternionf::Identity();  // Quaternion
+  Eigen::Vector3f position_            = Eigen::Vector3f::Zero();         // m
 
 };  // class IMU
 

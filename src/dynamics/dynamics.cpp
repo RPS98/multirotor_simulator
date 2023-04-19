@@ -140,13 +140,13 @@ Eigen::Vector3f Dynamics::get_vehicle_angular_velocity_derivative(
 /**
  * @brief Compute the vehicle position derivative
  *
- * @param lineal_velocity Vehicle lineal velocity in earth frame
+ * @param linear_velocity Vehicle linear velocity in earth frame
  *
  * @return Eigen::Vector3f Vehicle position derivative
  */
 inline Eigen::Vector3f Dynamics::get_vehicle_position_derivative(
-    const Eigen::Vector3f &lineal_velocity) {
-  return lineal_velocity;
+    const Eigen::Vector3f &linear_velocity) {
+  return linear_velocity;
 }
 
 /**
@@ -157,13 +157,10 @@ inline Eigen::Vector3f Dynamics::get_vehicle_position_derivative(
  *
  * @return Eigen::Vector4f Vehicle orientation derivative
  */
-Eigen::Vector4f Dynamics::get_vehicle_orientation_derivative(
+inline Eigen::Vector4f Dynamics::get_vehicle_orientation_derivative(
     const Eigen::Quaternionf &orientation,
     const Eigen::Vector3f &angular_velocity) {
-  Eigen::Quaternionf angular_velocity_q;
-  angular_velocity_q.w()   = 0;
-  angular_velocity_q.vec() = angular_velocity;
-  return 0.5f * (orientation * angular_velocity_q).coeffs();
+  return utils::get_quaternion_derivative(orientation, angular_velocity);
 }
 
 /**

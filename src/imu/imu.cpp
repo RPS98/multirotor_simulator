@@ -37,7 +37,7 @@ using namespace quadrotor;
 
 /**
  * @brief Construct a new IMU::IMU object
- * 
+ *
  * @param gyro_noise_var Gyroscope noise variance.
  * @param accel_noise_var Accelerometer noise variance.
  * @param gyro_bias_noise_autocorr_time Gyroscope bias noise autocorrelation time.
@@ -48,17 +48,18 @@ IMU::IMU(float gyro_noise_var,
          float accel_noise_var,
          float gyro_bias_noise_autocorr_time,
          float accel_bias_noise_autocorr_time,
+         Eigen::Quaternionf initial_world_orientation,
          Eigen::Quaternionf imu_orientation = Eigen::Quaternionf::Identity())
     : gyro_noise_var_(gyro_noise_var), accel_noise_var_(accel_noise_var),
       gyro_bias_noise_autocorr_time_(gyro_bias_noise_autocorr_time),
       accel_bias_noise_autocorr_time_(accel_bias_noise_autocorr_time),
-      imu_orientation_(imu_orientation) {
+      orientation_(initial_world_orientation), imu_orientation_(imu_orientation) {
   // Random number generator
   random_number_generator_.seed(std::chrono::system_clock::now().time_since_epoch().count());
 
   // Standard normal distribution
-  // set_bias(gyro_noise_var, accel_noise_var, gyro_bias_noise_autocorr_time,
-  //          accel_bias_noise_autocorr_time);
+  set_bias(gyro_noise_var, accel_noise_var, gyro_bias_noise_autocorr_time,
+           accel_bias_noise_autocorr_time);
 }
 
 IMU::~IMU() {
@@ -180,6 +181,39 @@ void IMU::get_variances(float& gyro_bias_var, float& accel_bias_var) const {
 }
 
 /**
+ * @brief Return the IMU measurement.
+ *
+ * @param gyro Output gyroscope measurement in body frame.
+ * @param accel Output accelerometer measurement in body frame.
+ */
+void IMU::get_measurement(Eigen::Vector3f& gyro, Eigen::Vector3f& accel) const {
+  gyro  = gyro_;
+  accel = accel_;
+}
+
+/**
+ * @brief Return the IMU measurement.
+ *
+ * @param position Output position integrated from the IMU in the world frame.
+ * @param orientation Output orientation integrated from the IMU in the world frame.
+ * @param linear_velocity Output linear velocity integrated from the IMU in the world frame.
+ * @param angular_velocity Output angular velocity integrated from the IMU in the world frame.
+ * @param linear_acceleration Output linear acceleration integrated from the IMU in the world
+ * frame.
+ */
+void IMU::get_measurement(Eigen::Vector3f& position,
+                          Eigen::Quaternionf& orientation,
+                          Eigen::Vector3f& linear_velocity,
+                          Eigen::Vector3f& angular_velocity,
+                          Eigen::Vector3f& linear_acceleration) const {
+  position            = position_;
+  orientation         = orientation_;
+  linear_velocity     = linear_velocity_;
+  angular_velocity    = angular_velocity_;
+  linear_acceleration = linear_acceleration_;
+}
+
+/**
  * @brief Process the IMU bias.
  *
  * @param dt Time step.
@@ -209,17 +243,13 @@ void IMU::process_bias(const float dt) {
 }
 
 /**
- * @brief Get the IMU measurement.
+ * @brief Update the IMU measurement.
  *
  * @param specific_force Total force acting on the IMU without gravity in body frame.
  * @param vehicle_angular_velocity Angular velocity of the vehicle in the body frame.
- * @param gyro Output gyroscope measurement in imu frame.
- * @param accel Output accelerometer measurement in imu frame.
  */
-void IMU::get_measurement(const Eigen::Vector3f specific_force,
-                          const Eigen::Vector3f vehicle_angular_velocity,
-                          Eigen::Vector3f& gyro,
-                          Eigen::Vector3f& accel) {
+void IMU::process_measurement(const Eigen::Vector3f specific_force,
+                              const Eigen::Vector3f vehicle_angular_velocity) {
   Eigen::Vector3f gyro_noise = Eigen::Vector3f(
       sqrt(gyro_noise_var_) * standard_normal_distribution_(random_number_generator_),
       sqrt(gyro_noise_var_) * standard_normal_distribution_(random_number_generator_),
@@ -231,6 +261,49 @@ void IMU::get_measurement(const Eigen::Vector3f specific_force,
       sqrt(accel_noise_var_) * standard_normal_distribution_(random_number_generator_));
 
   // Rotate specific force and angular velocity to IMU frame
-  gyro  = imu_orientation_.inverse() * vehicle_angular_velocity + gyro_bias_ + gyro_noise;
-  accel = imu_orientation_.inverse() * specific_force + accel_bias_ + accel_noise;
+  gyro_  = imu_orientation_.inverse() * vehicle_angular_velocity + gyro_bias_ + gyro_noise;
+  accel_ = imu_orientation_.inverse() * specific_force + accel_bias_ + accel_noise;
+}
+
+/**
+ * @brief Integrate the IMU measurement using Euler integration.
+ *
+ * @param dt Time step in seconds.
+ */
+void IMU::integrate_measurement(const float dt) {
+  // Angular velocity in body frame
+  // gyro_
+
+  // Linear acceleration in body frame
+  // accel_
+
+  // Angular velocity in world frame
+  angular_velocity_ = orientation_ * gyro_;
+
+  // Linear acceleration in world frame
+  linear_acceleration_ = orientation_ * accel_;
+
+  // Integrate angular velocity to get orientation quaternion
+  orientation_ = utils::get_quaternion_integrate(orientation_, gyro_, dt);
+
+  // Integrate linear acceleration to get linear velocity
+  linear_velocity_ += accel_ * dt;
+
+  // Integrate linear velocity to get position
+  position_ += linear_velocity_ * dt;
+}
+
+/**
+ * @brief Update the IMU state
+ *
+ * @param dt Delta time in seconds
+ * @param specific_force Total force acting on the IMU without gravity in world frame.
+ * @param vehicle_angular_velocity Angular velocity of the vehicle in the world frame.
+ */
+void IMU::update(const float dt,
+                 const Eigen::Vector3f specific_force,
+                 const Eigen::Vector3f vehicle_angular_velocity) {
+  process_bias(dt);
+  process_measurement(specific_force, vehicle_angular_velocity);
+  integrate_measurement(dt);
 }

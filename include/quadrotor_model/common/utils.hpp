@@ -69,6 +69,40 @@ inline void clamp_vector(Eigen::Vector4f &vector, const float min, const float m
   return;
 }
 
+/**
+ * @brief Get the quaternion derivative object
+ *
+ * @param q Quaternion to be derived
+ * @param omega Angular velocity
+ *
+ * @return Eigen::Vector4f Quaternion derivative
+ */
+Eigen::Vector4f get_quaternion_derivative(const Eigen::Quaternionf &q,
+                                          const Eigen::Vector3f &omega) {
+  Eigen::Quaternionf omega_q;
+  omega_q.w()   = 0;
+  omega_q.vec() = omega;
+  return 0.5f * (q * omega_q).coeffs();
+};
+
+/**
+ * @brief Get the quaternion integrate
+ *
+ * @param q Quaternion to be integrated
+ * @param omega Angular velocity
+ * @param dt Time step
+ *
+ * @return Eigen::Quaternionf
+ */
+Eigen::Quaternionf get_quaternion_integrate(const Eigen::Quaternionf &q,
+                                            const Eigen::Vector3f &omega,
+                                            const float dt) {
+  Eigen::Vector4f q_derivate = get_quaternion_derivative(q, omega);
+  Eigen::Quaternionf quaternion_integrate;
+  quaternion_integrate.coeffs() += q_derivate * dt;
+  return quaternion_integrate;
+};
+
 }  // namespace utils
 
 }  // namespace quadrotor
