@@ -60,31 +60,46 @@ Quadrotor is a rigid body, which mass center is the origin of the body frame.
 ## Kinematics
 The state from the point of view of kinematics can be defined as:
 
-* **Position** 
+* **Position**
+
 $$ \mathbf{p} = [x, y, z] $$
+
 * **Attitude** 
+
 $$ \mathbf{q} = [\theta_x, \theta_y, \theta_z] = [w, q_1, q_2, q_3] $$
+
 * **Velocity** 
+
 $$ \mathbf{v} = [v_x, v_y, v_z] $$
+
 * **Angular velocity** 
+
 $$ \mathbf{\omega} = [\omega_x, \omega_y, \omega_z] $$
+
 * **Linear acceleration** 
+
 $$ \mathbf{a} = [a_x, a_y, a_z] $$
+
 * **Angular acceleration** 
+
 $$ \mathbf{\alpha} = [\alpha_x, \alpha_y, \alpha_z] $$
 
 ## Dynamics
 The state from the point of view of dynamics can be defined as sum of forces and moments acting on the quadrotor:
 
 * **Force** 
+
 $$ \mathbf{F} = [F_x, F_y, F_z] $$
+
 * **Torque** 
+
 $$ \mathbf{\tau} = [\tau_x, \tau_y, \tau_z] $$
 
 ## Actuation
 The state from the point of view of actuation can be defined as the angular speed of the motors:
 
 * **Motor angular velocity** 
+
 $$ \mathbf{\omega_m} = [\omega_1, \omega_2, \omega_3, \omega_4] $$
 
 
@@ -95,14 +110,23 @@ The are several ways to define the actuation of a quadrotor. The lowest level of
 Some of the most common actuation modes are, from lowest to highest level of abstraction:
 
 * **Motor angular velocity** 
+
 $$ \mathbf{\omega_m} = [\omega_1, \omega_2, \omega_3, \omega_4] $$
+
 * **Acro mode** 
+
 $$ \mathbf{Acro} = [\mathbf{T}, \omega_x, \omega_y, \omega_z] $$
+
 * **Attitude mode** 
+
 $$ \mathbf{Attitude} = [\mathbf{T}, \theta_x, \theta_y, \theta_z] $$
+
 * **Speed mode** 
+
 $$ \mathbf{v} = [v_x, v_y, v_z, \omega_z] $$
+
 * **Position mode** 
+
 $$ \mathbf{p} = [x, y, z, \theta_z] $$
 
 
@@ -570,8 +594,6 @@ The negative sign in front of the equation indicates that the aerodynamic moment
 #### **3.2.2 Stochastic Moment**
 
 Stochastic moments are produced by the random forces that act on the vehicle. It can be modeled as a random moment with a normal distribution.
-
-
 
 # Quadrotor Kinematics
 
