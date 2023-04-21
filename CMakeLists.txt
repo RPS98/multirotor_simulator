@@ -43,7 +43,11 @@ endforeach()
 include_directories(
   include
   include/${PROJECT_NAME}
-
+  include/${PROJECT_NAME}/common
+  include/${PROJECT_NAME}/dynamics
+  include/${PROJECT_NAME}/flight_controller
+  include/${PROJECT_NAME}/imu
+  
   # uncomment if using Eigen3
   ${EIGEN3_INCLUDE_DIRS}
 
