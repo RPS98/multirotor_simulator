@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       utils.hpp
- *  \brief      Utils class definition
+ *  \file       utils.cpp
+ *  \brief      Utils implementation file.
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,15 +31,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#include "common/utils.hpp"
 
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
-
-namespace quadrotor {
-
-namespace utils {
+using namespace quadrotor;
 
 /**
  * @brief Clamp a vector between a min and a max
@@ -48,7 +42,12 @@ namespace utils {
  * @param min Minimum value
  * @param max Maximum value
  */
-void clamp_vector(Eigen::Vector3f &vector, const float min, const float max);
+inline void utils::clamp_vector(Eigen::Vector3f &vector, const float min, const float max) {
+  for (int i = 0; i < 3; i++) {
+    std::clamp(vector(i), min, max);
+  }
+  return;
+}
 
 /**
  * @brief Clamp a vector between a min and a max
@@ -57,7 +56,12 @@ void clamp_vector(Eigen::Vector3f &vector, const float min, const float max);
  * @param min Minimum value
  * @param max Maximum value
  */
-void clamp_vector(Eigen::Vector4f &vector, const float min, const float max);
+inline void clamp_vector(Eigen::Vector4f &vector, const float min, const float max) {
+  for (int i = 0; i < 4; i++) {
+    std::clamp(vector(i), min, max);
+  }
+  return;
+}
 
 /**
  * @brief Get the quaternion derivative object
@@ -67,8 +71,13 @@ void clamp_vector(Eigen::Vector4f &vector, const float min, const float max);
  *
  * @return Eigen::Vector4f Quaternion derivative
  */
-Eigen::Vector4f get_quaternion_derivative(const Eigen::Quaternionf &q,
-                                          const Eigen::Vector3f &omega);
+Eigen::Vector4f utils::get_quaternion_derivative(const Eigen::Quaternionf &q,
+                                                 const Eigen::Vector3f &omega) {
+  Eigen::Quaternionf omega_q;
+  omega_q.w()   = 0;
+  omega_q.vec() = omega;
+  return 0.5f * (q * omega_q).coeffs();
+};
 
 /**
  * @brief Get the quaternion integrate
@@ -79,12 +88,11 @@ Eigen::Vector4f get_quaternion_derivative(const Eigen::Quaternionf &q,
  *
  * @return Eigen::Quaternionf
  */
-Eigen::Quaternionf get_quaternion_integrate(const Eigen::Quaternionf &q,
-                                            const Eigen::Vector3f &omega,
-                                            const float dt);
-
-}  // namespace utils
-
-}  // namespace quadrotor
-
-#endif  // UTILS_HPP
+Eigen::Quaternionf utils::get_quaternion_integrate(const Eigen::Quaternionf &q,
+                                                   const Eigen::Vector3f &omega,
+                                                   const float dt) {
+  Eigen::Vector4f q_derivate = get_quaternion_derivative(q, omega);
+  Eigen::Quaternionf quaternion_integrate;
+  quaternion_integrate.coeffs() += q_derivate * dt;
+  return quaternion_integrate;
+};

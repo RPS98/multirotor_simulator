@@ -49,6 +49,7 @@ include_directories(
 
 set(SOURCE_CPP_FILES
   src/common/model.cpp
+  src/common/utils.cpp
   src/dynamics/dynamics.cpp
   src/flight_controller/flight_controller.cpp
   src/imu/imu.cpp
