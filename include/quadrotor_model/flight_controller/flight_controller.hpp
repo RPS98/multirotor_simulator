@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       quadrotor_model.hpp
- *  \brief      Quadrotor model class definition
+ *  \file       flight_controller.hpp
+ *  \brief      Flight Controller class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,16 +31,40 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#ifndef QUADROTOR_MODEL_HPP
-#define QUADROTOR_MODEL_HPP
+#ifndef FLIGHT_CONTROLLER_HPP
+#define FLIGHT_CONTROLLER_HPP
 
-namespace quadrotor_model {
+#include <iostream>
+#include <memory>
+#include "pid_controller/PID_3D.hpp"
 
-class QuadrotorModel {
-  QuadrotorModel();
-  ~QuadrotorModel();
-};  // class QuadrotorModel
+#include "common/actuation.hpp"
+#include "common/model.hpp"
+#include "common/state.hpp"
 
-}  // namespace quadrotor_model
+namespace quadrotor {
 
-#endif  // QUADROTOR_MODEL_HPP
+class FlightController {
+public:
+  FlightController(std::shared_ptr<Model> model,
+                   Eigen::Vector3f kp,
+                   Eigen::Vector3f ki,
+                   Eigen::Vector3f kd);
+  ~FlightController();
+
+public:
+  void acro_to_motor_speeds(const actuation::Acro& acro,
+                            const Eigen::Vector3f& current_angular_velocity,
+                            actuation::MotorW& motor_speeds);
+
+private:
+  std::shared_ptr<Model> model_;
+
+  // PID controller
+  pid_controller::PIDController3D pid_controller_;
+
+};  // class FlightController
+
+}  // namespace quadrotor
+
+#endif  // FLIGHT_CONTROLLER_HPP

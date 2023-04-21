@@ -12,10 +12,24 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+if(${pid_controller_FOUND})
+  MESSAGE(STATUS "pid_controller found")
+else(${pid_controller_FOUND})
+  MESSAGE(STATUS "pid_controller not found")
+  include(FetchContent)
+  FetchContent_Declare(
+    pid_controller
+    GIT_REPOSITORY https://github.com/RPS98/pid_controller.git
+    GIT_TAG main
+  )
+  FetchContent_MakeAvailable(pid_controller)
+endif(${pid_controller_FOUND})
+
 # find dependencies
 set(PROJECT_DEPENDENCIES
   ament_cmake
   Eigen3
+  pid_controller
 )
 
 foreach(DEPENDENCY ${PROJECT_DEPENDENCIES})
@@ -28,10 +42,17 @@ include_directories(
 
   # uncomment if using Eigen3
   ${EIGEN3_INCLUDE_DIRS}
+
+  # Include pid_controller
+  ${pid_controller_INCLUDE_DIRS}
 )
 
 set(SOURCE_CPP_FILES
-  src/${PROJECT_NAME}.cpp
+  src/common/model.cpp
+  src/dynamics/dynamics.cpp
+  src/flight_controller/flight_controller.cpp
+  src/imu/imu.cpp
+  src/quadrotor.cpp
 )
 
 # create library and export it
@@ -61,7 +82,7 @@ install(
   INCLUDES DESTINATION include
 )
 
-# # check if tests are enabled
+# check if tests are enabled
 if(BUILD_TESTING)
   find_package(ament_cmake_cppcheck REQUIRED)
   find_package(ament_cmake_clang_format REQUIRED)
@@ -70,7 +91,7 @@ if(BUILD_TESTING)
   ament_cppcheck(src/ include/ tests/)
   ament_clang_format(src/ include/ tests/ --config ${CMAKE_CURRENT_SOURCE_DIR}/.clang-format)
 
-  file(GLOB TEST_SOURCE "tests/*_benchmark.cpp")
+  file(GLOB TEST_SOURCE "tests/*_test.cpp")
 
   foreach(TEST_FILE ${TEST_SOURCE})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)

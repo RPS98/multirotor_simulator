@@ -1,6 +1,6 @@
 /*!*******************************************************************************************
- *  \file       quadrotor_model.cpp
- *  \brief      Quadrotor model implementation file.
+ *  \file       state.hpp
+ *  \brief      Quadrotor State class definition
  *  \authors    Rafael Pérez Seguí
  *
  *  \copyright  Copyright (c) 2022 Universidad Politécnica de Madrid
@@ -31,14 +31,41 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "quadrotor_model/quadrotor_model.hpp"
+#ifndef STATE_HPP
+#define STATE_HPP
 
-using namespace quadrotor_model;
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
-QuadrotorModel::QuadrotorModel() {
-  // TODO
-}
+namespace quadrotor {
 
-QuadrotorModel::~QuadrotorModel() {
-  // TODO
-}
+namespace state {
+struct Kinematics {
+  Eigen::Vector3f position             = Eigen::Vector3f::Zero();
+  Eigen::Quaternionf orientation       = Eigen::Quaternionf::Identity();
+  Eigen::Vector3f linear_velocity      = Eigen::Vector3f::Zero();
+  Eigen::Vector3f angular_velocity     = Eigen::Vector3f::Zero();
+  Eigen::Vector3f linear_acceleration  = Eigen::Vector3f::Zero();
+  Eigen::Vector3f angular_acceleration = Eigen::Vector3f::Zero();
+};  // struct Kinematics
+
+struct Dynamics {
+  Eigen::Vector3f force  = Eigen::Vector3f::Zero();
+  Eigen::Vector3f torque = Eigen::Vector3f::Zero();
+};  // struct Dynamics
+
+struct Actuators {
+  Eigen::Vector4f motor_angular_velocity = Eigen::Vector4f::Zero();
+};  // struct Actuation
+
+}  // namespace state
+
+struct State {
+  state::Kinematics kinematics;
+  state::Dynamics dynamics;
+  state::Actuators actuators;
+};  // struct state
+
+}  // namespace quadrotor
+
+#endif  // STATE_HPP
