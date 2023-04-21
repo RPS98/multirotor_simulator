@@ -12,6 +12,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Download the pid_controller from github
+find_package(pid_controller QUIET)
+
 if(${pid_controller_FOUND})
   MESSAGE(STATUS "pid_controller found")
 else(${pid_controller_FOUND})
@@ -29,6 +32,7 @@ endif(${pid_controller_FOUND})
 set(PROJECT_DEPENDENCIES
   ament_cmake
   Eigen3
+
   pid_controller
 )
 
@@ -48,7 +52,9 @@ include_directories(
 )
 
 set(SOURCE_CPP_FILES
+  src/common/actuation.cpp
   src/common/model.cpp
+  src/common/state.cpp
   src/common/utils.cpp
   src/dynamics/dynamics.cpp
   src/flight_controller/flight_controller.cpp
@@ -57,31 +63,30 @@ set(SOURCE_CPP_FILES
 )
 
 # create library and export it
-add_library(${PROJECT_NAME} ${SOURCE_CPP_FILES})
-
-target_include_directories(${PROJECT_NAME}
-  PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+add_library(${PROJECT_NAME} SHARED
+  ${SOURCE_CPP_FILES})
 
 ament_target_dependencies(${PROJECT_NAME} ${PROJECT_DEPENDENCIES})
 
-ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(${PROJECT_DEPENDENCIES})
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT ${PROJECT_NAME}
+# install library
+install(TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
 )
+
+# install headers
+install(DIRECTORY include/
+  DESTINATION include/
+)
+
+# export targets
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+# export dependencies
+ament_export_dependencies(${PROJECT_DEPENDENCIES})
 
 # check if tests are enabled
 if(BUILD_TESTING)
@@ -103,4 +108,5 @@ if(BUILD_TESTING)
   endforeach()
 endif()
 
+# create package
 ament_package()
