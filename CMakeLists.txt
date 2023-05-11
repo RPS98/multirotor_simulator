@@ -12,6 +12,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# set fPIC to ON by default
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Download the pid_controller from github
 find_package(pid_controller QUIET)
 
@@ -43,11 +46,7 @@ endforeach()
 include_directories(
   include
   include/${PROJECT_NAME}
-  include/${PROJECT_NAME}/common
-  include/${PROJECT_NAME}/dynamics
-  include/${PROJECT_NAME}/flight_controller
-  include/${PROJECT_NAME}/imu
-  
+
   # uncomment if using Eigen3
   ${EIGEN3_INCLUDE_DIRS}
 
@@ -75,9 +74,10 @@ target_include_directories(${PROJECT_NAME}
   $<INSTALL_INTERFACE:include>)
 
 ament_target_dependencies(${PROJECT_NAME} ${PROJECT_DEPENDENCIES})
-
-ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_include_directories(include)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${PROJECT_DEPENDENCIES})
+ament_export_libraries(${PROJECT_NAME})
 
 install(
   DIRECTORY include/
@@ -86,7 +86,7 @@ install(
 
 install(
   TARGETS ${PROJECT_NAME}
-  EXPORT ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
@@ -108,7 +108,7 @@ if(BUILD_TESTING)
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
     add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES})
+    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
     target_link_libraries(${PROJECT_NAME}_${TEST_NAME} benchmark ${PROJECT_NAME})
   endforeach()
 endif()

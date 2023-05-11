@@ -31,7 +31,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "flight_controller/flight_controller.hpp"
+#include "quadrotor_model/flight_controller/flight_controller.hpp"
 
 using namespace quadrotor;
 
@@ -53,9 +53,6 @@ FlightController::~FlightController() {
 void FlightController::acro_to_motor_speeds(const actuation::Acro& acro,
                                             const Eigen::Vector3f& current_angular_velocity,
                                             actuation::MotorW& motor_speeds) {
-  // Normalized thrust to Thrust in Newtons
-  float thrust = acro.thrust * model_->get_mass();
-
   // Angular velocity error
 
   // PID controller for angular velocity error
@@ -103,5 +100,8 @@ void FlightController::acro_to_motor_speeds(const actuation::Acro& acro,
   // Compute the desired motor speeds
   motor_speeds.angular_velocity =
       allocation_matrix.inverse() *
-      Eigen::Vector4f(thrust, torque_desired.x(), torque_desired.y(), torque_desired.z());
+      Eigen::Vector4f(acro.thrust, torque_desired.x(), torque_desired.y(), torque_desired.z());
+
+  // Convert motor speed squared to motor speed
+  motor_speeds.angular_velocity = utils::sqrt_keep_sign(motor_speeds.angular_velocity);
 }

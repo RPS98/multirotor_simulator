@@ -37,12 +37,12 @@
 #include <iostream>
 #include <memory>
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
-#include "dynamics/dynamics.hpp"
-#include "flight_controller/flight_controller.hpp"
-#include "imu/imu.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
+#include "quadrotor_model/dynamics/dynamics.hpp"
+#include "quadrotor_model/flight_controller/flight_controller.hpp"
+#include "quadrotor_model/imu/imu.hpp"
 
 namespace quadrotor {
 
@@ -60,12 +60,12 @@ struct quadrotor_params {
   float motor_time_constant;
   float motor_rotational_inertia;
   float vehicle_mass;
-  const Eigen::Matrix3f& vehicle_inertia;
-  float vehicle_drag_coefficient              = 0.0f;
-  float vehicle_aero_moment_coefficient       = 0.0f;
-  const Eigen::Vector3f& gravity              = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
-  float moment_process_noise_auto_correlation = 0.0f;
-  float force_process_noise_auto_correlation  = 0.0f;
+  Eigen::Matrix3f vehicle_inertia;
+  float vehicle_drag_coefficient                  = 0.0f;
+  Eigen::Matrix3f vehicle_aero_moment_coefficient = Eigen::Matrix3f::Zero();
+  Eigen::Vector3f gravity                         = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
+  float moment_process_noise_auto_correlation     = 0.0f;
+  float force_process_noise_auto_correlation      = 0.0f;
 
   /* State */
   State initial_state;
@@ -92,9 +92,19 @@ public:
 
   inline void get_state(State& state) const { state = *state_; };
 
+  inline void get_imu_measurement(Eigen::Vector3f& gyro, Eigen::Vector3f& accel) const {
+    imu_->get_measurement(gyro, accel);
+  };
+
   inline void get_imu_measurement(state::Kinematics& measurement) const {
     imu_->get_measurement(measurement);
   };
+
+  void apply_floor_force();
+  void acro_to_motor_speeds(const actuation::Acro& actuation);
+  void process_euler_explicit(float dt);
+  void apply_floor_limit();
+  void update_imu(float dt);
 
 public:
   // Shared variables

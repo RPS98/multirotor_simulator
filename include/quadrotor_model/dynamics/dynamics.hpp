@@ -37,10 +37,10 @@
 #include <iostream>
 #include <memory>
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
-#include "common/utils.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
+#include "quadrotor_model/common/utils.hpp"
 
 namespace quadrotor {
 
@@ -56,7 +56,6 @@ public:
 private:
   std::shared_ptr<Model> model_;
   std::shared_ptr<State> state_;
-  std::shared_ptr<State> last_state_;
 
   float dt_;
   Eigen::Vector4f motor_acceleration_ = Eigen::Vector4f::Zero();

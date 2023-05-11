@@ -38,9 +38,9 @@
 #include <memory>
 #include "pid_controller/PID_3D.hpp"
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
 
 namespace quadrotor {
 

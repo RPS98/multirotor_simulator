@@ -31,7 +31,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "imu/imu.hpp"
+#include "quadrotor_model/imu/imu.hpp"
 
 using namespace quadrotor;
 

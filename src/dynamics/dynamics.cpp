@@ -31,7 +31,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "dynamics/dynamics.hpp"
+#include "quadrotor_model/dynamics/dynamics.hpp"
 
 using namespace quadrotor;
 
@@ -48,7 +48,6 @@ void Dynamics::process_euler_explicit(const actuation::MotorW &actuation,
                                       const float dt,
                                       const Eigen::Vector3f &external_force) {
   Eigen::Vector4f motor_angular_velocity_desired = actuation.angular_velocity;
-  *last_state_                                   = *state_;
 
   // Initialize stochastic noise
   model_->set_stochastic_noise(dt);
@@ -70,7 +69,7 @@ void Dynamics::process_euler_explicit(const actuation::MotorW &actuation,
       model_->get_stochastic_force(), state_->dynamics.torque);
 
   Eigen::Vector3f linear_velocity_derivative = get_vehicle_linear_velocity_derivative(
-      model_->mass, state_->kinematics.orientation, model_->motor_thrust_coefficient,
+      model_->vehicle_mass, state_->kinematics.orientation, model_->motor_thrust_coefficient,
       state_->actuators.motor_angular_velocity, model_->vehicle_drag_coefficient,
       state_->kinematics.linear_velocity, model_->get_gravity_force(),
       model_->get_stochastic_force(), external_force, state_->dynamics.force);
@@ -83,6 +82,8 @@ void Dynamics::process_euler_explicit(const actuation::MotorW &actuation,
 
   // Integrate system
   state_->actuators.motor_angular_velocity += motor_angular_velocity_derivative * dt;
+  utils::clamp_vector(state_->actuators.motor_angular_velocity, model_->motor_min_speed,
+                      model_->motor_max_speed);
   state_->kinematics.angular_velocity += angular_velocity_derivative * dt;
   state_->kinematics.linear_velocity += linear_velocity_derivative * dt;
   state_->kinematics.orientation.coeffs() += orientation_derivative * dt;
