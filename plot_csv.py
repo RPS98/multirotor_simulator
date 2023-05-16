@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 
 # create an ArgumentParser object
 parser = argparse.ArgumentParser(description='Plot x,y,z values from a CSV file')
@@ -33,6 +33,16 @@ w1 = data[:,13]
 w2 = data[:,14]
 w3 = data[:,15]
 w4 = data[:,16]
+w1r = data[:,17]
+w2r = data[:,18]
+w3r = data[:,19]
+w4r = data[:,20]
+tx = data[:,21]
+ty = data[:,22]
+tz = data[:,23]
+txr = data[:,24]
+tyr = data[:,25]
+tzr = data[:,26]
 
 # Create a figure with 3d plot:
 #   x,y,z trajectory
@@ -122,27 +132,61 @@ axs[3,2].set_title('wz')
 fig_w, axs_w = plt.subplots(1, 4, sharex=True)
 
 axs_w[0].plot(time, w1)
+axs_w[0].plot(time, w1r)
 axs_w[0].set_xlabel('time [s]')
 axs_w[0].set_ylabel('w1 [rad/s]')
 axs_w[0].set_title('w1')
+axs_w[0].legend(['w1', 'w1r'], loc='upper right')
 
 axs_w[1].plot(time, w2)
+axs_w[1].plot(time, w2r)
 axs_w[1].set_xlabel('time [s]')
 axs_w[1].set_ylabel('w2 [rad/s]')
 axs_w[1].set_title('w2')
+axs_w[1].legend(['w2', 'w2r'], loc='upper right')
 
 axs_w[2].plot(time, w3)
+axs_w[2].plot(time, w3r)
 axs_w[2].set_xlabel('time [s]')
 axs_w[2].set_ylabel('w3 [rad/s]')
 axs_w[2].set_title('w3')
+axs_w[2].legend(['w3', 'w3r'], loc='upper right')
 
 axs_w[3].plot(time, w4)
+axs_w[3].plot(time, w4r)
 axs_w[3].set_xlabel('time [s]')
 axs_w[3].set_ylabel('w4 [rad/s]')
 axs_w[3].set_title('w4')
+axs_w[3].legend(['w3', 'w3r'], loc='upper right')
+
+# Three subplots for torque tx, ty, tz
+fig_t, axs_t = plt.subplots(1, 3, sharex=True)
+
+axs_t[0].plot(time, tx)
+axs_t[0].plot(time, txr)
+axs_t[0].set_xlabel('time [s]')
+axs_t[0].set_ylabel('tx [Nm]')
+axs_t[0].set_title('tx')
+axs_t[0].legend(['tx', 'txr'], loc='upper right')
+
+axs_t[1].plot(time, ty)
+axs_t[1].plot(time, tyr)
+axs_t[1].set_xlabel('time [s]')
+axs_t[1].set_ylabel('ty [Nm]')
+axs_t[1].set_title('ty')
+axs_t[1].legend(['ty', 'tyr'], loc='upper right')
+
+axs_t[2].plot(time, tz)
+axs_t[2].plot(time, tzr)
+axs_t[2].set_xlabel('time [s]')
+axs_t[2].set_ylabel('tz [Nm]')
+axs_t[2].set_title('tz')
+axs_t[2].legend(['tz', 'tzr'], loc='upper right')
+
 
 # Add the code to enable quitting on pressing 'q'
 def press(event):
+    """ Define the function to quit on pressing 'q' """
     if event.key == 'q':
         plt.close()
 

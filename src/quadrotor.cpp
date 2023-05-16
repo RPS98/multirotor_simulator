@@ -42,8 +42,9 @@ Quadrotor::Quadrotor(quadrotor_params& params) : floor_height_(params.floor_heig
   model_ = std::make_shared<Model>(
       params.motor_thrust_coefficient, params.motor_torque_coefficient, params.motor_dx,
       params.motor_dy, params.motor_min_speed, params.motor_max_speed, params.motor_time_constant,
-      params.motor_rotational_inertia, params.vehicle_mass, params.vehicle_inertia,
-      params.vehicle_drag_coefficient, params.vehicle_aero_moment_coefficient, params.gravity,
+      params.motor_rotational_inertia, params.motors_frame_type, params.vehicle_mass,
+      params.vehicle_inertia, params.vehicle_drag_coefficient,
+      params.vehicle_aero_moment_coefficient, params.gravity,
       params.moment_process_noise_auto_correlation, params.force_process_noise_auto_correlation);
 
   state_ = std::make_shared<State>(params.initial_state);
@@ -98,8 +99,8 @@ inline void Quadrotor::apply_floor_force() {
 
 inline void Quadrotor::acro_to_motor_speeds(const actuation::Acro& actuation) {
   // Convert from Acro to MotorW
-  flight_controller_->acro_to_motor_speeds(actuation, state_->kinematics.angular_velocity,
-                                           actuation_motor_w_);
+  actuation_motor_w_.angular_velocity =
+      flight_controller_->acro_to_motor_speeds(actuation, state_->kinematics.angular_velocity);
 }
 
 inline void Quadrotor::process_euler_explicit(float dt) {

@@ -43,6 +43,7 @@ Model::Model(float motor_thrust_coefficient,
              float motor_max_speed,
              float motor_time_constant,
              float motor_rotational_inertia,
+             int motors_frame_type,
              float vehicle_mass,
              const Eigen::Matrix3f& vehicle_inertia,
              float vehicle_drag_coefficient,
@@ -53,15 +54,25 @@ Model::Model(float motor_thrust_coefficient,
     : motor_thrust_coefficient(motor_thrust_coefficient),
       motor_torque_coefficient(motor_torque_coefficient), motor_min_speed(motor_min_speed),
       motor_max_speed(motor_max_speed), motor_time_constant(motor_time_constant),
-      motor_rotational_inertia(motor_rotational_inertia), vehicle_mass(vehicle_mass),
-      vehicle_inertia(vehicle_inertia), vehicle_drag_coefficient(vehicle_drag_coefficient),
+      motor_rotational_inertia(motor_rotational_inertia), motors_frame_type(motors_frame_type),
+      vehicle_mass(vehicle_mass), vehicle_inertia(vehicle_inertia),
+      vehicle_drag_coefficient(vehicle_drag_coefficient),
       vehicle_aero_moment_coefficient(vehicle_aero_moment_coefficient), gravity(gravity),
       moment_process_noise_auto_correlation(moment_process_noise_auto_correlation),
       force_process_noise_auto_correlation(force_process_noise_auto_correlation) {
   // Frame transformations
-  motors_frame_thrust_coefficient_matrix << 0.0f, motor_dy * motor_thrust_coefficient, 0.0f,
-      -motor_dy * motor_thrust_coefficient, -motor_dx * motor_thrust_coefficient, 0.0f,
-      motor_dx * motor_thrust_coefficient, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f;
+  assert(motors_frame_type == 0 || motors_frame_type == 1);
+  if (motors_frame_type == 0) {
+    motors_frame_thrust_coefficient_matrix << 0.0f, motor_dy * motor_thrust_coefficient, 0.0f,
+        -motor_dy * motor_thrust_coefficient, -motor_dx * motor_thrust_coefficient, 0.0f,
+        motor_dx * motor_thrust_coefficient, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f;
+  } else if (motors_frame_type == 1) {
+    motors_frame_thrust_coefficient_matrix << -1.0f * motor_dy * motor_thrust_coefficient,
+        motor_dy * motor_thrust_coefficient, motor_dy * motor_thrust_coefficient,
+        -1.0f * motor_dy * motor_thrust_coefficient, -1.0f * motor_dx * motor_thrust_coefficient,
+        -1.0f * motor_dx * motor_thrust_coefficient, motor_dx * motor_thrust_coefficient,
+        motor_dx * motor_thrust_coefficient, 0.0f, 0.0f, 0.0f, 0.0f;
+  }
 
   motors_frame_torque_coefficient_matrix << 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
       motor_torque_coefficient, -motor_torque_coefficient, motor_torque_coefficient,

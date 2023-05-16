@@ -11,13 +11,12 @@
 
 void test_actuation_instance() { quadrotor::actuation::Acro actuation; }
 
-void test_model_instance() {
+quadrotor::Model test_model_instance() {
   Eigen::Matrix3f vehicle_inertia                 = Eigen::Matrix3f::Zero();
   Eigen::Matrix3f vehicle_aero_moment_coefficient = Eigen::Matrix3f::Zero();
   Eigen::Vector3f gravity                         = Eigen::Vector3f::Zero();
-  auto model_ptr_                                 = std::make_shared<quadrotor::Model>(
-      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, vehicle_inertia, 0.0f,
-      vehicle_aero_moment_coefficient, gravity, 0.0f, 0.0f);
+  return quadrotor::Model(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, 0.0f, vehicle_inertia,
+                          0.0f, vehicle_aero_moment_coefficient, gravity, 0.0f, 0.0f);
 }
 
 void test_state_instance() { quadrotor::State state; }
@@ -26,9 +25,7 @@ void test_dynamics_instance() {
   Eigen::Matrix3f vehicle_inertia                 = Eigen::Matrix3f::Zero();
   Eigen::Matrix3f vehicle_aero_moment_coefficient = Eigen::Matrix3f::Zero();
   Eigen::Vector3f gravity                         = Eigen::Vector3f::Zero();
-  auto model_ptr_                                 = std::make_shared<quadrotor::Model>(
-      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, vehicle_inertia, 0.0f,
-      vehicle_aero_moment_coefficient, gravity, 0.0f, 0.0f);
+  auto model_ptr_ = std::make_shared<quadrotor::Model>(test_model_instance());
 
   auto state_ptr_ = std::make_shared<quadrotor::State>();
 
@@ -39,9 +36,7 @@ void test_flight_controller_instance() {
   Eigen::Matrix3f vehicle_inertia                 = Eigen::Matrix3f::Zero();
   Eigen::Matrix3f vehicle_aero_moment_coefficient = Eigen::Matrix3f::Zero();
   Eigen::Vector3f gravity                         = Eigen::Vector3f::Zero();
-  auto model_ptr_                                 = std::make_shared<quadrotor::Model>(
-      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, vehicle_inertia, 0.0f,
-      vehicle_aero_moment_coefficient, gravity, 0.0f, 0.0f);
+  auto model_ptr_ = std::make_shared<quadrotor::Model>(test_model_instance());
 
   Eigen::Vector3f kp_ = Eigen::Vector3f::Ones();
   Eigen::Vector3f ki_ = Eigen::Vector3f::Zero();

@@ -98,6 +98,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_cppcheck REQUIRED)
   find_package(ament_cmake_clang_format REQUIRED)
   find_package(benchmark REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
 
   ament_cppcheck(src/ include/ tests/)
   ament_clang_format(src/ include/ tests/ --config ${CMAKE_CURRENT_SOURCE_DIR}/.clang-format)
@@ -110,6 +111,17 @@ if(BUILD_TESTING)
     add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
     ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
     target_link_libraries(${PROJECT_NAME}_${TEST_NAME} benchmark ${PROJECT_NAME})
+  endforeach()
+
+  file(GLOB TEST_SOURCE "tests/*_gtest.cpp")
+
+  foreach(TEST_FILE ${TEST_SOURCE})
+    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+
+    ament_add_gtest(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
+
+    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
+    target_link_libraries(${PROJECT_NAME}_${TEST_NAME} gtest_main ${PROJECT_NAME})
   endforeach()
 endif()
 

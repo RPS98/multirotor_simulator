@@ -44,7 +44,9 @@ public:
   CsvLogger(const std::string& file_name) : file_name_(file_name) {
     LOG("Saving to file: " << file_name);
     file_ = std::ofstream(file_name, std::ofstream::out | std::ofstream::trunc);
-    file_ << "Time,x,y,z,roll,pitch,yaw,vx,vy,vz,wx,wy,wz,w1,w2,w3,w4" << std::endl;
+    file_ << "Time,x,y,z,roll,pitch,yaw,vx,vy,vz,wx,wy,wz,w1,w2,w3,w4,w1r,w2r,w3r,w4r,tx,ty,tz,txr,"
+             "tyz,tzr"
+          << std::endl;
   }
 
   ~CsvLogger() { file_.close(); }
@@ -81,7 +83,10 @@ public:
             const Eigen::Vector3f& data_q,
             const Eigen::Vector3f& data_v,
             const Eigen::Vector3f& data_w,
-            const Eigen::Vector4f& data_mw) {
+            const Eigen::Vector4f& data_mw,
+            const Eigen::Vector4f& data_mw_ref,
+            const Eigen::Vector3f& data_torque,
+            const Eigen::Vector3f& data_torque_ref) {
     file_ << time << ",";
     for (size_t i = 0; i < data_p.size(); ++i) {
       file_ << data_p[i] << ",";
@@ -98,15 +103,27 @@ public:
     for (size_t i = 0; i < data_mw.size(); ++i) {
       file_ << data_mw[i] << ",";
     }
+    for (size_t i = 0; i < data_mw_ref.size(); ++i) {
+      file_ << data_mw_ref[i] << ",";
+    }
+    for (size_t i = 0; i < data_torque.size(); ++i) {
+      file_ << data_torque[i] << ",";
+    }
+    for (size_t i = 0; i < data_torque_ref.size(); ++i) {
+      file_ << data_torque_ref[i] << ",";
+    }
     file_ << std::endl;
   }
 
-  void save(float time, const quadrotor::State& data) {
+  void save(float time,
+            const quadrotor::State& data,
+            const Eigen::Vector4f motor_w_ref,
+            const Eigen::Vector3f torque_ref) {
     float roll, pitch, yaw;
     quaternion_to_Euler(data.kinematics.orientation, roll, pitch, yaw);
     save(time, data.kinematics.position, Eigen::Vector3f(roll, pitch, yaw),
          data.kinematics.linear_velocity, data.kinematics.angular_velocity,
-         data.actuators.motor_angular_velocity);
+         data.actuators.motor_angular_velocity, motor_w_ref, data.dynamics.torque, torque_ref);
   }
 
   void close() { file_.close(); }
@@ -168,33 +185,32 @@ void test_quadrotor() {
   quadrotor_params params;
   State initial_state;
 
-  params.floor_height             = -10.0f;
-  params.motor_thrust_coefficient = 1.91e-6f;
-  params.motor_torque_coefficient = 2.6e-7f;
-  params.motor_dx                 = 0.08f;
-  params.motor_dy                 = 0.08f;
-  params.motor_min_speed          = 0.0f;
-  params.motor_max_speed          = 2200.0f;
-  params.motor_time_constant      = 0.02f;
-  params.motor_rotational_inertia = 0.0f;  // 6.62e-6f;
-  params.vehicle_mass             = 1.0f;
-  params.vehicle_inertia          = Eigen::Vector3f(0.0049f, 0.0049f, 0.0069f).asDiagonal();
-  params.vehicle_drag_coefficient = 0.0f;  // 0.1f;
-  params.vehicle_aero_moment_coefficient =
-      Eigen::Vector3f::Zero()
-          .asDiagonal();  // Eigen::Vector3f(0.003f, 0.003f, 0.003f).asDiagonal();
-  params.gravity = Eigen::Vector3f::Zero();                // Eigen::Vector3f(0.0f, 0.0f, -9.81f);
-  params.moment_process_noise_auto_correlation    = 0.0f,  // 1.25e-7f;
-      params.force_process_noise_auto_correlation = 0.0f,  // 0.0005f;
-      params.initial_state                        = initial_state;
-  params.kp                                       = Eigen::Vector3f(9.0f, 9.0f, 9.0f);
-  params.ki                                       = Eigen::Vector3f(3.0f, 3.0f, 3.0f);
-  params.kd                                       = Eigen::Vector3f(0.3f, 0.3f, 0.3f);
-  params.gyro_noise_var                           = 0.003f;
-  params.accel_noise_var                          = 0.005f;
-  params.gyro_bias_noise_autocorr_time            = 1.0e-7f;
-  params.accel_bias_noise_autocorr_time           = 1.0e-7f;
-  params.imu_orientation                          = Eigen::Quaternionf(1.0f, 0.0f, 0.0f, 0.0f);
+  params.floor_height                    = -10.0f;
+  params.motor_thrust_coefficient        = 1.91e-6f;
+  params.motor_torque_coefficient        = 2.6e-7f;
+  params.motor_dx                        = 0.08f;
+  params.motor_dy                        = 0.08f;
+  params.motor_min_speed                 = 0.0f;
+  params.motor_max_speed                 = 2200.0f;
+  params.motor_time_constant             = 0.02f;
+  params.motor_rotational_inertia        = 6.62e-6f;
+  params.motors_frame_type               = 1;  // 0: +-Configuration, 1: X-Configuration
+  params.vehicle_mass                    = 1.0f;
+  params.vehicle_inertia                 = Eigen::Vector3f(0.0049f, 0.0049f, 0.0069f).asDiagonal();
+  params.vehicle_drag_coefficient        = 0.1f;
+  params.vehicle_aero_moment_coefficient = Eigen::Vector3f(0.003f, 0.003f, 0.003f).asDiagonal();
+  params.gravity                         = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
+  params.moment_process_noise_auto_correlation = 1.25e-7f;
+  params.force_process_noise_auto_correlation  = 0.0005f;
+  params.initial_state                         = initial_state;
+  params.kp                                    = Eigen::Vector3f(9.0f, 9.0f, 9.0f);
+  params.ki                                    = Eigen::Vector3f(3.0f, 3.0f, 3.0f);
+  params.kd                                    = Eigen::Vector3f(0.3f, 0.3f, 0.3f);
+  params.gyro_noise_var                        = 0.003f;
+  params.accel_noise_var                       = 0.005f;
+  params.gyro_bias_noise_autocorr_time         = 1.0e-7f;
+  params.accel_bias_noise_autocorr_time        = 1.0e-7f;
+  params.imu_orientation                       = Eigen::Quaternionf(1.0f, 0.0f, 0.0f, 0.0f);
 
   Quadrotor quadrotor(params);
 
@@ -221,16 +237,21 @@ void test_quadrotor() {
   float time = 0.0f;
   // print_state(quadrotor);
   int iterations = 30000;
+
+  Eigen::Vector4f motor_speeds_ref_;
+  Eigen::Vector3f torque_ref_;
+
   for (int i = 0; i < iterations; i++) {
     if (i == 20000) {
-      acro.angular_velocity.x() = -0.01f;
-      // acro.angular_velocity.y() = -0.1f;
+      acro.angular_velocity.y() = 0.01f;
       LOG("Applying angular velocity");
     }
 
     // quadrotor.update(dt, acro);
     quadrotor.apply_floor_force();
     quadrotor.acro_to_motor_speeds(acro);
+    motor_speeds_ref_ = quadrotor.actuation_motor_w_.angular_velocity;
+    torque_ref_       = quadrotor.flight_controller_->get_torque_desired();
     quadrotor.process_euler_explicit(dt);
     quadrotor.apply_floor_limit();
     quadrotor.update_imu(dt);
@@ -241,7 +262,7 @@ void test_quadrotor() {
     quadrotor.get_imu_measurement(gyroscope_measurement, accelerometer_measurement);
 
     // print_state(state, state_kinematics, gyroscope_measurement, accelerometer_measurement);
-    logger.save(time, state);
+    logger.save(time, state, motor_speeds_ref_, torque_ref_);
     time += dt;
   }
   logger.close();

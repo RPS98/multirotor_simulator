@@ -55,6 +55,7 @@ struct quadrotor_params {
   float motor_torque_coefficient;
   float motor_dx;
   float motor_dy;
+  int motors_frame_type;
   float motor_min_speed;
   float motor_max_speed;
   float motor_time_constant;
@@ -114,7 +115,7 @@ public:
   std::shared_ptr<FlightController> flight_controller_;
   std::shared_ptr<IMU> imu_;
 
-private:
+public:
   actuation::MotorW actuation_motor_w_;
 
   float floor_height_;
