@@ -48,13 +48,17 @@ class FlightController {
 public:
   FlightController(std::shared_ptr<Model> model,
                    Eigen::Vector3f kp,
-                   Eigen::Vector3f ki,
-                   Eigen::Vector3f kd);
+                   Eigen::Vector3f ki   = Eigen::Vector3f(0.0, 0.0, 0.0),
+                   Eigen::Vector3f kd   = Eigen::Vector3f(0.0, 0.0, 0.0),
+                   float antiwindup_cte = 1000.0f,
+                   float alpha          = 0.1f);
+
   ~FlightController();
 
 public:
   Eigen::Vector4f acro_to_motor_speeds(const actuation::Acro& acro,
-                                       const Eigen::Vector3f& current_angular_velocity);
+                                       const Eigen::Vector3f& current_angular_velocity,
+                                       const float dt);
 
   void reset_controller();
 

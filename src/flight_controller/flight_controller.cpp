@@ -37,13 +37,17 @@ using namespace quadrotor;
 
 FlightController::FlightController(std::shared_ptr<Model> model,
                                    Eigen::Vector3f kp,
-                                   Eigen::Vector3f ki = Eigen::Vector3f(0.0, 0.0, 0.0),
-                                   Eigen::Vector3f kd = Eigen::Vector3f(0.0, 0.0, 0.0))
+                                   Eigen::Vector3f ki,
+                                   Eigen::Vector3f kd,
+                                   float antiwindup_cte,
+                                   float alpha)
     : model_(model) {
   Eigen::Vector3d _kp = kp.cast<double>();
   Eigen::Vector3d _ki = ki.cast<double>();
   Eigen::Vector3d _kd = kd.cast<double>();
   pid_controller_.setGains(_kp, _ki, _kd);
+  pid_controller_.setAntiWindup(antiwindup_cte);
+  pid_controller_.setAlpha(alpha);
 
   allocation_matrix_.block<1, 4>(0, 0) = Eigen::Vector4f(
       model_->get_motors_thrust_coefficient(), model_->get_motors_thrust_coefficient(),
@@ -62,10 +66,11 @@ void FlightController::reset_controller() { pid_controller_.resetController(); }
 
 Eigen::Vector4f FlightController::acro_to_motor_speeds(
     const actuation::Acro& acro,
-    const Eigen::Vector3f& current_angular_velocity) {
+    const Eigen::Vector3f& current_angular_velocity,
+    const float dt) {
   // PID controller for angular velocity error
   angular_acceleration_ = pid_controller_
-                              .computeControl(1.0f, current_angular_velocity.cast<double>(),
+                              .computeControl(dt, current_angular_velocity.cast<double>(),
                                               acro.angular_velocity.cast<double>())
                               .cast<float>();
 

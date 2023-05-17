@@ -73,8 +73,10 @@ struct quadrotor_params {
 
   /* Flight Controller Parameters */
   Eigen::Vector3f kp;
-  Eigen::Vector3f ki = Eigen::Vector3f::Zero();
-  Eigen::Vector3f kd = Eigen::Vector3f::Zero();
+  Eigen::Vector3f ki   = Eigen::Vector3f::Zero();
+  Eigen::Vector3f kd   = Eigen::Vector3f::Zero();
+  float antiwindup_cte = 0.0f;
+  float alpha          = 1.0f;
 
   /* IMU Parameters */
   float gyro_noise_var                 = 0.0f;
@@ -102,12 +104,12 @@ public:
   };
 
   void apply_floor_force();
-  void acro_to_motor_speeds(const actuation::Acro& actuation);
+  void acro_to_motor_speeds(const actuation::Acro& actuation, const float dt);
   void process_euler_explicit(float dt);
   void apply_floor_limit();
   void update_imu(float dt);
 
-public:
+private:
   // Shared variables
   std::shared_ptr<Model> model_;
   std::shared_ptr<State> state_;
@@ -115,12 +117,60 @@ public:
   std::shared_ptr<FlightController> flight_controller_;
   std::shared_ptr<IMU> imu_;
 
-public:
+private:
   actuation::MotorW actuation_motor_w_;
 
   float floor_height_;
   Eigen::Vector3f external_force_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f floor_force_    = Eigen::Vector3f::Zero();
+
+public:
+  /* Getters */
+
+  /**
+   * @brief Get the model object
+   *
+   * @return std::shared_ptr<Model>
+   */
+  inline std::shared_ptr<Model> get_model() const { return model_; };
+
+  /**
+   * @brief Get the state object
+   *
+   * @return std::shared_ptr<State>
+   */
+  inline std::shared_ptr<State> get_state() const { return state_; };
+
+  /**
+   * @brief Get the dynamics object
+   *
+   * @return std::shared_ptr<Dynamics>
+   */
+  inline std::shared_ptr<Dynamics> get_dynamics() const { return dynamics_; };
+
+  /**
+   * @brief Get the flight controller object
+   *
+   * @return std::shared_ptr<FlightController>
+   */
+  inline std::shared_ptr<FlightController> get_flight_controller() const {
+    return flight_controller_;
+  };
+
+  /**
+   * @brief Get the imu object
+   *
+   * @return std::shared_ptr<IMU>
+   */
+  inline std::shared_ptr<IMU> get_imu() const { return imu_; };
+
+  /**
+   * @brief Get the floor height object
+   *
+   * @return float
+   */
+  inline float get_floor_height() const { return floor_height_; };
+
 };  // class Quadrotor
 
 }  // namespace quadrotor

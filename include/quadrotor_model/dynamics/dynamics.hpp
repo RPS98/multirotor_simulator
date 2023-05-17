@@ -60,7 +60,7 @@ private:
   float dt_;
   Eigen::Vector4f motor_acceleration_ = Eigen::Vector4f::Zero();
 
-private:
+protected:
   static Eigen::Vector4f get_motors_angular_velocity_derivative(
       const Eigen::Vector4f &desired_angular_velocity,
       const Eigen::Vector4f &current_angular_velocity,
@@ -99,7 +99,6 @@ private:
       const Eigen::Vector3f &external_force,
       Eigen::Vector3f &vehicle_total_force);
 
-  // void motor_dynamics(Eigen::Vector4f &desired_angular_velocity);
 };  // class Dynamics
 
 }  // namespace quadrotor

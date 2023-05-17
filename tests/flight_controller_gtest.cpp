@@ -12,7 +12,7 @@ using namespace quadrotor;
 
 #define LOG(x, y) std::cout << x << ":" << std::endl << y << std::endl
 
-std::shared_ptr<Model> get_mode(int motors_frame_type) {
+std::shared_ptr<Model> get_model(int motors_frame_type) {
   quadrotor_params params;
 
   params.motor_thrust_coefficient = 1.91e-6f;
@@ -54,7 +54,7 @@ FlightController test_flight_controller_instance(std::shared_ptr<Model> model) {
 }
 
 TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
-  auto model                         = get_mode(0);
+  auto model                         = get_model(0);
   FlightController flight_controller = test_flight_controller_instance(model);
 
   // Input
@@ -66,11 +66,12 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   Eigen::Vector4f motor_speeds;
 
   float speed = 1.0f;
+  float dt    = 0.01f;
 
   // Move up
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[1]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[2], motor_speeds[3]);
@@ -78,7 +79,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move clockwise
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, -speed);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_LT(motor_speeds[0], motor_speeds[1]);
@@ -86,7 +87,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move counter-clockwise
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, speed);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_GT(motor_speeds[0], motor_speeds[1]);
@@ -94,7 +95,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move forward
   acro.angular_velocity = Eigen::Vector3f(0.0f, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_LT(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_LT(motor_speeds[0], motor_speeds[1]);
@@ -103,7 +104,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move backward
   acro.angular_velocity = Eigen::Vector3f(0.0f, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_GT(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_GT(motor_speeds[0], motor_speeds[1]);
@@ -112,7 +113,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move left
   acro.angular_velocity = Eigen::Vector3f(-speed, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_LT(motor_speeds[1], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_LT(motor_speeds[1], motor_speeds[0]);
@@ -121,7 +122,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move right
   acro.angular_velocity = Eigen::Vector3f(speed, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_GT(motor_speeds[1], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_GT(motor_speeds[1], motor_speeds[0]);
@@ -130,7 +131,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move diagonally forward left
   acro.angular_velocity = Eigen::Vector3f(-speed, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[1]);
   EXPECT_EQ(motor_speeds[2], motor_speeds[3]);
   EXPECT_LT(motor_speeds[0], motor_speeds[2]);
@@ -138,7 +139,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move diagonally forward right
   acro.angular_velocity = Eigen::Vector3f(speed, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[2]);
   EXPECT_LT(motor_speeds[0], motor_speeds[1]);
@@ -146,7 +147,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move diagonally backward left
   acro.angular_velocity = Eigen::Vector3f(-speed, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[2]);
   EXPECT_GT(motor_speeds[0], motor_speeds[1]);
@@ -154,14 +155,14 @@ TEST(FlightController, AcroToMotorSpeedsConfigPlus) {
   // Move diagonally backward right
   acro.angular_velocity = Eigen::Vector3f(speed, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[1]);
   EXPECT_EQ(motor_speeds[2], motor_speeds[3]);
   EXPECT_GT(motor_speeds[0], motor_speeds[2]);
 }
 
 TEST(FlightController, AcroToMotorSpeedsConfigCross) {
-  auto model                         = get_mode(1);
+  auto model                         = get_model(1);
   FlightController flight_controller = test_flight_controller_instance(model);
 
   // Input
@@ -173,11 +174,12 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   Eigen::Vector4f motor_speeds;
 
   float speed = 1.0f;
+  float dt    = 0.01f;
 
   // Move up
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[1]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[2], motor_speeds[3]);
@@ -185,7 +187,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move clockwise
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, -speed);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_LT(motor_speeds[0], motor_speeds[1]);
@@ -193,7 +195,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move counter-clockwise
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, speed);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_GT(motor_speeds[0], motor_speeds[1]);
@@ -201,7 +203,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move forward
   acro.angular_velocity = Eigen::Vector3f(0.0f, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[1]);
   EXPECT_EQ(motor_speeds[2], motor_speeds[3]);
   EXPECT_LT(motor_speeds[0], motor_speeds[2]);
@@ -209,7 +211,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move backward
   acro.angular_velocity = Eigen::Vector3f(0.0f, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[1]);
   EXPECT_EQ(motor_speeds[2], motor_speeds[3]);
   EXPECT_GT(motor_speeds[0], motor_speeds[2]);
@@ -217,7 +219,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move left
   acro.angular_velocity = Eigen::Vector3f(-speed, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[2]);
   EXPECT_GT(motor_speeds[0], motor_speeds[1]);
@@ -225,7 +227,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move right
   acro.angular_velocity = Eigen::Vector3f(speed, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_EQ(motor_speeds[0], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[2]);
   EXPECT_LT(motor_speeds[0], motor_speeds[1]);
@@ -233,7 +235,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move diagonally forward left
   acro.angular_velocity = Eigen::Vector3f(-speed, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_LT(motor_speeds[1], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_LT(motor_speeds[1], motor_speeds[0]);
@@ -242,7 +244,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move diagonally forward right
   acro.angular_velocity = Eigen::Vector3f(speed, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_LT(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_LT(motor_speeds[0], motor_speeds[1]);
@@ -251,7 +253,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move diagonally backward left
   acro.angular_velocity = Eigen::Vector3f(-speed, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_GT(motor_speeds[0], motor_speeds[2]);
   EXPECT_EQ(motor_speeds[1], motor_speeds[3]);
   EXPECT_GT(motor_speeds[0], motor_speeds[1]);
@@ -260,7 +262,7 @@ TEST(FlightController, AcroToMotorSpeedsConfigCross) {
   // Move diagonally backward right
   acro.angular_velocity = Eigen::Vector3f(speed, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   EXPECT_GT(motor_speeds[1], motor_speeds[3]);
   EXPECT_EQ(motor_speeds[0], motor_speeds[2]);
   EXPECT_GT(motor_speeds[1], motor_speeds[0]);

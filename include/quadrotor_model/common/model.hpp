@@ -88,7 +88,7 @@ public:
 
   ~Model();
 
-public:
+private:
   // Quadrotor frame
   int motors_frame_type = 0;  // 0: +-Configuration, 1: X-Configuration
   Eigen::Matrix<float, 3, 4> motors_frame_thrust_coefficient_matrix;
@@ -125,6 +125,13 @@ public:
   /* Getters */
 
   /**
+   * @brief Get the vehicle drag coefficient object
+   * 
+   * @return float 
+   */
+  inline float get_vehicle_drag_coefficient() const { return this->vehicle_drag_coefficient; }
+
+  /**
    * @brief Get the gravity vector
    *
    * @return Eigen::Vector3f
@@ -137,6 +144,13 @@ public:
    * @return float
    */
   inline float get_mass() const { return this->vehicle_mass; };
+
+  /**
+   * @brief Get the motors time constant object
+   *
+   * @return float
+   */
+  inline float get_motors_time_constant() const { return this->motor_time_constant; };
 
   /**
    * @brief Get the motors frame inertia matrix object
@@ -178,6 +192,20 @@ public:
    * @return float
    */
   inline float get_motors_thrust_coefficient() const { return this->motor_thrust_coefficient; };
+
+  /**
+   * @brief Get the motors min speed object
+   *
+   * @return float
+   */
+  inline float get_motors_min_speed() const { return this->motor_min_speed; };
+
+  /**
+   * @brief Get the motors max speed object
+   *
+   * @return float
+   */
+  inline float get_motors_max_speed() const { return this->motor_max_speed; };
 
   /**
    * @brief Get the stochastic force in the body frame

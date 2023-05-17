@@ -53,24 +53,24 @@ void Dynamics::process_euler_explicit(const actuation::MotorW &actuation,
   model_->set_stochastic_noise(dt);
 
   // Process actuation
-  utils::clamp_vector(motor_angular_velocity_desired, model_->motor_min_speed,
-                      model_->motor_max_speed);
+  utils::clamp_vector(motor_angular_velocity_desired, model_->get_motors_min_speed(),
+                      model_->get_motors_max_speed());
 
   // Compute system derivatives
   Eigen::Vector4f motor_angular_velocity_derivative = get_motors_angular_velocity_derivative(
       motor_angular_velocity_desired, state_->actuators.motor_angular_velocity,
-      model_->motor_time_constant);
+      model_->get_motors_time_constant());
 
   Eigen::Vector3f angular_velocity_derivative = get_vehicle_angular_velocity_derivative(
-      model_->vehicle_inertia, state_->kinematics.angular_velocity,
+      model_->get_vehicle_inertia(), state_->kinematics.angular_velocity,
       model_->get_motor_torque(state_->actuators.motor_angular_velocity,
                                motor_angular_velocity_derivative),
       model_->get_aerodynamic_moment(state_->kinematics.angular_velocity),
       model_->get_stochastic_force(), state_->dynamics.torque);
 
   Eigen::Vector3f linear_velocity_derivative = get_vehicle_linear_velocity_derivative(
-      model_->vehicle_mass, state_->kinematics.orientation, model_->motor_thrust_coefficient,
-      state_->actuators.motor_angular_velocity, model_->vehicle_drag_coefficient,
+      model_->get_mass(), state_->kinematics.orientation, model_->get_motors_thrust_coefficient(),
+      state_->actuators.motor_angular_velocity, model_->get_vehicle_drag_coefficient(),
       state_->kinematics.linear_velocity, model_->get_gravity_force(),
       model_->get_stochastic_force(), external_force, state_->dynamics.force);
 
@@ -82,8 +82,8 @@ void Dynamics::process_euler_explicit(const actuation::MotorW &actuation,
 
   // Integrate system
   state_->actuators.motor_angular_velocity += motor_angular_velocity_derivative * dt;
-  utils::clamp_vector(state_->actuators.motor_angular_velocity, model_->motor_min_speed,
-                      model_->motor_max_speed);
+  utils::clamp_vector(state_->actuators.motor_angular_velocity, model_->get_motors_min_speed(),
+                      model_->get_motors_max_speed());
   state_->kinematics.angular_velocity += angular_velocity_derivative * dt;
   state_->kinematics.linear_velocity += linear_velocity_derivative * dt;
   state_->kinematics.orientation.coeffs() += orientation_derivative * dt;
@@ -193,6 +193,7 @@ Eigen::Vector3f Dynamics::get_vehicle_linear_velocity_derivative(
     const Eigen::Vector3f &stochastic_force,
     const Eigen::Vector3f &external_force,
     Eigen::Vector3f &vehicle_total_force) {
+
   // Compute the thrust force in earth frame
   Eigen::Vector3f thrust_force =
       orientation * Model::get_thrust_force(motor_thrust_coefficient, motor_angular_velocity);

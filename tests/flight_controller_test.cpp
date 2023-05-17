@@ -11,7 +11,7 @@ using namespace quadrotor;
 
 #define LOG(x, y) std::cout << x << ":" << std::endl << y << std::endl
 
-std::shared_ptr<Model> get_mode(int motors_frame_type) {
+std::shared_ptr<Model> get_model(int motors_frame_type) {
   quadrotor_params params;
 
   params.motor_thrust_coefficient = 1.91e-6f;
@@ -53,7 +53,7 @@ FlightController test_flight_controller_instance(std::shared_ptr<Model> model) {
 }
 
 void test_acro_to_motor_speeds(int motors_frame_type) {
-  auto model                         = get_mode(motors_frame_type);
+  auto model                         = get_model(motors_frame_type);
   FlightController flight_controller = test_flight_controller_instance(model);
 
   // Input
@@ -65,71 +65,72 @@ void test_acro_to_motor_speeds(int motors_frame_type) {
   Eigen::Vector4f motor_speeds;
 
   float speed = 1.0f;
+  float dt    = 0.01f;
 
   // Move up
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move up", motor_speeds);
 
   // Move clockwise
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, -speed);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move clockwise", motor_speeds);
 
   // Move counter-clockwise
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, speed);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move counter-clockwise", motor_speeds);
 
   // Move forward
   acro.angular_velocity = Eigen::Vector3f(0.0f, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move forward", motor_speeds);
 
   // Move backward
   acro.angular_velocity = Eigen::Vector3f(0.0f, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move backward", motor_speeds);
 
   // Move left
   acro.angular_velocity = Eigen::Vector3f(-speed, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move left", motor_speeds);
 
   // Move right
   acro.angular_velocity = Eigen::Vector3f(speed, 0.0f, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move right", motor_speeds);
 
   // Move diagonally forward left
   acro.angular_velocity = Eigen::Vector3f(-speed, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move diagonally forward left", motor_speeds);
 
   // Move diagonally forward right
   acro.angular_velocity = Eigen::Vector3f(speed, speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move diagonally forward right", motor_speeds);
 
   // Move diagonally backward right
   acro.angular_velocity = Eigen::Vector3f(speed, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move diagonally backward right", motor_speeds);
 
   // Move diagonally backward left
   acro.angular_velocity = Eigen::Vector3f(-speed, -speed, 0.0f);
   flight_controller.reset_controller();
-  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity);
+  motor_speeds = flight_controller.acro_to_motor_speeds(acro, current_angular_velocity, dt);
   LOG("Move diagonally backward left", motor_speeds);
 }
 

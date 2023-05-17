@@ -44,86 +44,71 @@ public:
   CsvLogger(const std::string& file_name) : file_name_(file_name) {
     LOG("Saving to file: " << file_name);
     file_ = std::ofstream(file_name, std::ofstream::out | std::ofstream::trunc);
-    file_ << "Time,x,y,z,roll,pitch,yaw,vx,vy,vz,wx,wy,wz,w1,w2,w3,w4,w1r,w2r,w3r,w4r,tx,ty,tz,txr,"
-             "tyz,tzr"
+    file_ << "Time,x,y,z,roll,pitch,yaw,vx,vy,vz,wx,wy,wz,wxr,wyr,wzr,w1,w2,w3,w4,w1r,w2r,w3r,w4r,"
+             "tx,ty,tz,txr,tyz,tzr,thrust,thrustr"
           << std::endl;
   }
 
   ~CsvLogger() { file_.close(); }
 
-  void save(float time, const std::vector<float>& data) {
-    file_ << time << ",";
+  void add_time_row(float time) { file_ << time << ","; }
+
+  void add_float(float data) { file_ << data << ","; }
+
+  void add_vector_row(const Eigen::Vector3f& data) {
     for (size_t i = 0; i < data.size(); ++i) {
       file_ << data[i] << ",";
     }
-    file_ << std::endl;
   }
 
-  void save(float time, const Eigen::Vector3f& data) {
-    file_ << time << ",";
+  void add_vector_row(const Eigen::Vector4f& data) {
     for (size_t i = 0; i < data.size(); ++i) {
       file_ << data[i] << ",";
     }
-    file_ << std::endl;
   }
 
-  void save(float time, const Eigen::Vector3f& data_p, const Eigen::Vector3f& data_q) {
-    file_ << time << ",";
-    for (size_t i = 0; i < data_p.size(); ++i) {
-      file_ << data_p[i] << ",";
-    }
-    for (size_t i = 0; i < data_q.size(); ++i) {
-      file_ << data_q[i] << ",";
-    }
-    file_ << std::endl;
-  }
+  void save(float time, const quadrotor::Quadrotor& quadrotor, quadrotor::actuation::Acro acro) {
+    add_time_row(time);
 
-  void save(float time,
-            const Eigen::Vector3f& data_p,
-            const Eigen::Vector3f& data_q,
-            const Eigen::Vector3f& data_v,
-            const Eigen::Vector3f& data_w,
-            const Eigen::Vector4f& data_mw,
-            const Eigen::Vector4f& data_mw_ref,
-            const Eigen::Vector3f& data_torque,
-            const Eigen::Vector3f& data_torque_ref) {
-    file_ << time << ",";
-    for (size_t i = 0; i < data_p.size(); ++i) {
-      file_ << data_p[i] << ",";
-    }
-    for (size_t i = 0; i < data_q.size(); ++i) {
-      file_ << data_q[i] << ",";
-    }
-    for (size_t i = 0; i < data_v.size(); ++i) {
-      file_ << data_v[i] << ",";
-    }
-    for (size_t i = 0; i < data_w.size(); ++i) {
-      file_ << data_w[i] << ",";
-    }
-    for (size_t i = 0; i < data_mw.size(); ++i) {
-      file_ << data_mw[i] << ",";
-    }
-    for (size_t i = 0; i < data_mw_ref.size(); ++i) {
-      file_ << data_mw_ref[i] << ",";
-    }
-    for (size_t i = 0; i < data_torque.size(); ++i) {
-      file_ << data_torque[i] << ",";
-    }
-    for (size_t i = 0; i < data_torque_ref.size(); ++i) {
-      file_ << data_torque_ref[i] << ",";
-    }
-    file_ << std::endl;
-  }
+    // Position
+    add_vector_row(quadrotor.get_state()->kinematics.position);
 
-  void save(float time,
-            const quadrotor::State& data,
-            const Eigen::Vector4f motor_w_ref,
-            const Eigen::Vector3f torque_ref) {
+    // Orientation
     float roll, pitch, yaw;
-    quaternion_to_Euler(data.kinematics.orientation, roll, pitch, yaw);
-    save(time, data.kinematics.position, Eigen::Vector3f(roll, pitch, yaw),
-         data.kinematics.linear_velocity, data.kinematics.angular_velocity,
-         data.actuators.motor_angular_velocity, motor_w_ref, data.dynamics.torque, torque_ref);
+    quaternion_to_Euler(quadrotor.get_state()->kinematics.orientation, roll, pitch, yaw);
+    add_vector_row(Eigen::Vector3f(roll, pitch, yaw));
+
+    // Velocity
+    add_vector_row(quadrotor.get_state()->kinematics.linear_velocity);
+
+    // Angular velocity
+    add_vector_row(quadrotor.get_state()->kinematics.angular_velocity);
+
+    // Reference angular velocity
+    add_vector_row(acro.angular_velocity);
+
+    // Motor speeds
+    add_vector_row(quadrotor.get_state()->actuators.motor_angular_velocity);
+
+    // Reference motor speeds
+    add_vector_row(quadrotor.get_flight_controller()->get_motor_speeds_angular_velocity());
+
+    // Vehicle torque
+    add_vector_row(quadrotor.get_state()->dynamics.torque);
+
+    // Reference vehicle torque
+    add_vector_row(quadrotor.get_flight_controller()->get_torque_desired());
+
+    // Vehicle thrust
+    add_float(Model::get_thrust_force(quadrotor.get_model()->get_motors_thrust_coefficient(),
+                                      quadrotor.get_state()->actuators.motor_angular_velocity)
+                  .z());
+
+    // Reference vehicle thrust
+    add_float(acro.thrust);
+
+    // End line
+    file_ << std::endl;
   }
 
   void close() { file_.close(); }
@@ -133,57 +118,11 @@ private:
   std::ofstream file_;
 };
 
-void print_ground_truth(const State& state) {
-  LOG("GT Pose: "
-      << "x: " << state.kinematics.position.x() << ", y: " << state.kinematics.position.y()
-      << ", z: " << state.kinematics.position.z() << ", w: " << state.kinematics.orientation.w()
-      << ", qx: " << state.kinematics.orientation.x() << ", qy: "
-      << state.kinematics.orientation.y() << ", qz: " << state.kinematics.orientation.z());
-
-  LOG("GT Twist: "
-      << "vx: " << state.kinematics.linear_velocity.x() << ", vy: "
-      << state.kinematics.linear_velocity.y() << ", vz: " << state.kinematics.linear_velocity.z()
-      << ", wx: " << state.kinematics.angular_velocity.x()
-      << ", wy: " << state.kinematics.angular_velocity.y()
-      << ", wz: " << state.kinematics.angular_velocity.z());
-}
-
-void print_odometry(const state::Kinematics& state_kinematics) {
-  LOG("Odometry: "
-      << "x: " << state_kinematics.position.x() << ", y: " << state_kinematics.position.y()
-      << ", z: " << state_kinematics.position.z() << ", w: " << state_kinematics.orientation.w()
-      << ", qx: " << state_kinematics.orientation.x() << ", qy: "
-      << state_kinematics.orientation.y() << ", qz: " << state_kinematics.orientation.z()
-      << ", vx: " << state_kinematics.linear_velocity.x() << ", vy: "
-      << state_kinematics.linear_velocity.y() << ", vz: " << state_kinematics.linear_velocity.z()
-      << ", wx: " << state_kinematics.angular_velocity.x()
-      << ", wy: " << state_kinematics.angular_velocity.y()
-      << ", wz: " << state_kinematics.angular_velocity.z());
-}
-
-void print_imu(const Eigen::Vector3f& gyroscope_measurement,
-               const Eigen::Vector3f accelerometer_measurement) {
-  LOG("IMU: "
-      << "ax: " << accelerometer_measurement.x() << ", ay: " << accelerometer_measurement.y()
-      << ", az: " << accelerometer_measurement.z() << ", wx: " << gyroscope_measurement.x()
-      << ", wy: " << gyroscope_measurement.y() << ", wz: " << gyroscope_measurement.z());
-}
-
-void print_state(const State& state,
-                 const state::Kinematics& state_kinematics,
-                 const Eigen::Vector3f& gyroscope_measurement,
-                 const Eigen::Vector3f& accelerometer_measurement) {
-  // LOG("STATE");
-  print_ground_truth(state);
-  // print_odometry(state_kinematics);
-  // print_imu(gyroscope_measurement, accelerometer_measurement);
-  LOG("");
-  return;
-}
-
-void test_quadrotor() {
+Quadrotor quadrotor_initialize() {
   quadrotor_params params;
   State initial_state;
+  initial_state.actuators.motor_angular_velocity =
+      Eigen::Vector4f(1000.0f, 1000.0f, 1000.0f, 1000.0f);
 
   params.floor_height                    = -10.0f;
   params.motor_thrust_coefficient        = 1.91e-6f;
@@ -200,12 +139,17 @@ void test_quadrotor() {
   params.vehicle_drag_coefficient        = 0.1f;
   params.vehicle_aero_moment_coefficient = Eigen::Vector3f(0.003f, 0.003f, 0.003f).asDiagonal();
   params.gravity                         = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
-  params.moment_process_noise_auto_correlation = 1.25e-7f;
-  params.force_process_noise_auto_correlation  = 0.0005f;
+  params.moment_process_noise_auto_correlation = 0.0f;  // 1.25e-7f;
+  params.force_process_noise_auto_correlation  = 0.0f;  // 5.00e-5f;
   params.initial_state                         = initial_state;
-  params.kp                                    = Eigen::Vector3f(9.0f, 9.0f, 9.0f);
-  params.ki                                    = Eigen::Vector3f(3.0f, 3.0f, 3.0f);
-  params.kd                                    = Eigen::Vector3f(0.3f, 0.3f, 0.3f);
+  float kp                                     = 10.0f;
+  float ki                                     = 6.0f;
+  float kd                                     = 0.02f;
+  params.kp                                    = Eigen::Vector3f(kp, kp, kp);
+  params.ki                                    = Eigen::Vector3f(ki, ki, ki);
+  params.kd                                    = Eigen::Vector3f(kd, kd, kd);
+  params.antiwindup_cte                        = 1500.0f;
+  params.alpha                                 = 0.4f;
   params.gyro_noise_var                        = 0.003f;
   params.accel_noise_var                       = 0.005f;
   params.gyro_bias_noise_autocorr_time         = 1.0e-7f;
@@ -214,61 +158,78 @@ void test_quadrotor() {
 
   Quadrotor quadrotor(params);
 
-  // State
-  State state;
-  state::Kinematics state_kinematics;
-  Eigen::Vector3f gyroscope_measurement;
-  Eigen::Vector3f accelerometer_measurement;
+  return quadrotor;
+}
+
+void test_quadrotor_input_step(std::string log_filename = "quadrotor.csv") {
+  // Initialize quadrotor
+  Quadrotor quadrotor = quadrotor_initialize();
 
   // Logger
-  // std::string filename =
-  //     "quadrotor_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count())
-  //     +
-  //     ".csv";
-  std::string filename = "quadrotor.csv";
-  CsvLogger logger(filename);
+  CsvLogger logger(log_filename);
 
   // For 100 iterations, simulate the quadrotor with a constant thrust and angular velocity
   quadrotor::actuation::Acro acro;
-  acro.thrust           = 1.0f;
+
+  float dt              = 0.001f;  // Delta time in seconds
+  float time            = 0.0f;    // Time in seconds
+  float simulation_time = 1.0f;    // Time in seconds of simulation
+  float time_step       = 0.5f;    // Time in seconds of step
+  float thrust          = 10.0f;   // Thrust in Newtons
+  float step            = 1.0f;    // Step in rad/s
+
+  acro.thrust           = thrust;
   acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
-
-  float dt   = 0.0001f;
-  float time = 0.0f;
-  // print_state(quadrotor);
-  int iterations = 30000;
-
-  Eigen::Vector4f motor_speeds_ref_;
-  Eigen::Vector3f torque_ref_;
-
-  for (int i = 0; i < iterations; i++) {
-    if (i == 20000) {
-      acro.angular_velocity.y() = 0.01f;
-      LOG("Applying angular velocity");
+  for (float time = 0.0f; time < simulation_time; time += dt) {
+    // If time is equal to time_step, step the angular velocity
+    if ((time - time_step) > -0.5f * dt && (time - time_step) < 0.5f * dt) {
+      LOG("Step");
+      acro.angular_velocity = Eigen::Vector3f(0.0f, step, 0.0f);
     }
+    quadrotor.update(dt, acro);
+    logger.save(time, quadrotor, acro);
+  }
+  logger.close();
+}
 
-    // quadrotor.update(dt, acro);
-    quadrotor.apply_floor_force();
-    quadrotor.acro_to_motor_speeds(acro);
-    motor_speeds_ref_ = quadrotor.actuation_motor_w_.angular_velocity;
-    torque_ref_       = quadrotor.flight_controller_->get_torque_desired();
-    quadrotor.process_euler_explicit(dt);
-    quadrotor.apply_floor_limit();
-    quadrotor.update_imu(dt);
+void test_quadrotor_input_delta(std::string log_filename = "quadrotor.csv") {
+  // Initialize quadrotor
+  Quadrotor quadrotor = quadrotor_initialize();
 
-    // Update State
-    quadrotor.get_state(state);
-    quadrotor.get_imu_measurement(state_kinematics);
-    quadrotor.get_imu_measurement(gyroscope_measurement, accelerometer_measurement);
+  // Logger
+  CsvLogger logger(log_filename);
 
-    // print_state(state, state_kinematics, gyroscope_measurement, accelerometer_measurement);
-    logger.save(time, state, motor_speeds_ref_, torque_ref_);
-    time += dt;
+  // For 100 iterations, simulate the quadrotor with a constant thrust and angular velocity
+  quadrotor::actuation::Acro acro;
+
+  float dt              = 0.001f;  // Delta time in seconds
+  float time            = 0.0f;    // Time in seconds
+  float simulation_time = 1.0f;    // Time in seconds of simulation
+  float time_delta      = 0.5f;    // Time in seconds of delta
+  float duration_delta  = 0.1f;    // Time in seconds of delta
+  float thrust          = 10.0f;   // Thrust in Newtons
+  float step            = 1.0f;    // Step in rad/s
+
+  acro.thrust           = thrust;
+  acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+  for (float time = 0.0f; time < simulation_time; time += dt) {
+    // If time is equal to time_step, step the angular velocity
+    if ((time - time_delta) > -0.5f * dt && (time - time_delta) < 0.5f * dt) {
+      LOG("Delta rise");
+      acro.angular_velocity = Eigen::Vector3f(0.0f, step, 0.0f);
+    } else if ((time - time_delta - duration_delta) > -0.5f * dt &&
+               (time - time_delta - duration_delta) < 0.5f * dt) {
+      LOG("Step fall");
+      acro.angular_velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+    }
+    quadrotor.update(dt, acro);
+    logger.save(time, quadrotor, acro);
   }
   logger.close();
 }
 
 int main(int argc, char* argv[]) {
-  test_quadrotor();
+  test_quadrotor_input_step();
+  test_quadrotor_input_delta();
   return 0;
 }
