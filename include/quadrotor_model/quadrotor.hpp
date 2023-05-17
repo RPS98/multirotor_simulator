@@ -37,12 +37,12 @@
 #include <iostream>
 #include <memory>
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
-#include "dynamics/dynamics.hpp"
-#include "flight_controller/flight_controller.hpp"
-#include "imu/imu.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
+#include "quadrotor_model/dynamics/dynamics.hpp"
+#include "quadrotor_model/flight_controller/flight_controller.hpp"
+#include "quadrotor_model/imu/imu.hpp"
 
 namespace quadrotor {
 
@@ -55,25 +55,28 @@ struct quadrotor_params {
   float motor_torque_coefficient;
   float motor_dx;
   float motor_dy;
+  int motors_frame_type;
   float motor_min_speed;
   float motor_max_speed;
   float motor_time_constant;
   float motor_rotational_inertia;
   float vehicle_mass;
-  const Eigen::Matrix3f& vehicle_inertia;
-  float vehicle_drag_coefficient              = 0.0f;
-  float vehicle_aero_moment_coefficient       = 0.0f;
-  const Eigen::Vector3f& gravity              = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
-  float moment_process_noise_auto_correlation = 0.0f;
-  float force_process_noise_auto_correlation  = 0.0f;
+  Eigen::Matrix3f vehicle_inertia;
+  float vehicle_drag_coefficient                  = 0.0f;
+  Eigen::Matrix3f vehicle_aero_moment_coefficient = Eigen::Matrix3f::Zero();
+  Eigen::Vector3f gravity                         = Eigen::Vector3f(0.0f, 0.0f, -9.81f);
+  float moment_process_noise_auto_correlation     = 0.0f;
+  float force_process_noise_auto_correlation      = 0.0f;
 
   /* State */
   State initial_state;
 
   /* Flight Controller Parameters */
   Eigen::Vector3f kp;
-  Eigen::Vector3f ki = Eigen::Vector3f::Zero();
-  Eigen::Vector3f kd = Eigen::Vector3f::Zero();
+  Eigen::Vector3f ki   = Eigen::Vector3f::Zero();
+  Eigen::Vector3f kd   = Eigen::Vector3f::Zero();
+  float antiwindup_cte = 0.0f;
+  float alpha          = 1.0f;
 
   /* IMU Parameters */
   float gyro_noise_var                 = 0.0f;
@@ -92,11 +95,21 @@ public:
 
   inline void get_state(State& state) const { state = *state_; };
 
+  inline void get_imu_measurement(Eigen::Vector3f& gyro, Eigen::Vector3f& accel) const {
+    imu_->get_measurement(gyro, accel);
+  };
+
   inline void get_imu_measurement(state::Kinematics& measurement) const {
     imu_->get_measurement(measurement);
   };
 
-public:
+  void apply_floor_force();
+  void acro_to_motor_speeds(const actuation::Acro& actuation, const float dt);
+  void process_euler_explicit(float dt);
+  void apply_floor_limit();
+  void update_imu(float dt);
+
+private:
   // Shared variables
   std::shared_ptr<Model> model_;
   std::shared_ptr<State> state_;
@@ -110,6 +123,54 @@ private:
   float floor_height_;
   Eigen::Vector3f external_force_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f floor_force_    = Eigen::Vector3f::Zero();
+
+public:
+  /* Getters */
+
+  /**
+   * @brief Get the model object
+   *
+   * @return std::shared_ptr<Model>
+   */
+  inline std::shared_ptr<Model> get_model() const { return model_; };
+
+  /**
+   * @brief Get the state object
+   *
+   * @return std::shared_ptr<State>
+   */
+  inline std::shared_ptr<State> get_state() const { return state_; };
+
+  /**
+   * @brief Get the dynamics object
+   *
+   * @return std::shared_ptr<Dynamics>
+   */
+  inline std::shared_ptr<Dynamics> get_dynamics() const { return dynamics_; };
+
+  /**
+   * @brief Get the flight controller object
+   *
+   * @return std::shared_ptr<FlightController>
+   */
+  inline std::shared_ptr<FlightController> get_flight_controller() const {
+    return flight_controller_;
+  };
+
+  /**
+   * @brief Get the imu object
+   *
+   * @return std::shared_ptr<IMU>
+   */
+  inline std::shared_ptr<IMU> get_imu() const { return imu_; };
+
+  /**
+   * @brief Get the floor height object
+   *
+   * @return float
+   */
+  inline float get_floor_height() const { return floor_height_; };
+
 };  // class Quadrotor
 
 }  // namespace quadrotor

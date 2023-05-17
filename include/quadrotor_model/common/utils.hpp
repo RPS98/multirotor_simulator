@@ -83,6 +83,42 @@ Eigen::Quaternionf get_quaternion_integrate(const Eigen::Quaternionf &q,
                                             const Eigen::Vector3f &omega,
                                             const float dt);
 
+/**
+ * @brief Compute Vector squared wise product, keeping the sign
+ *
+ * @param vector Vector to be squared
+ *
+ * @return Eigen::Vector3f Squared vector
+ */
+Eigen::Vector3f squared_keep_sign(const Eigen::Vector3f &vector);
+
+/**
+ * @brief Compute Vector squared wise product, keeping the sign
+ *
+ * @param vector Vector to be squared
+ *
+ * @return Eigen::Vector4f Squared vector
+ */
+Eigen::Vector4f squared_keep_sign(const Eigen::Vector4f &vector);
+
+/**
+ * @brief Compute Vector square root wise product, keeping the sign
+ *
+ * @param vector Vector to be squared root
+ *
+ * @return Eigen::Vector3f Squared root vector
+ */
+Eigen::Vector3f sqrt_keep_sign(const Eigen::Vector3f &vector);
+
+/**
+ * @brief Compute Vector square root wise product, keeping the sign
+ *
+ * @param vector Vector to be squared root
+ *
+ * @return Eigen::Vector4f Squared root vector
+ */
+Eigen::Vector4f sqrt_keep_sign(const Eigen::Vector4f &vector);
+
 }  // namespace utils
 
 }  // namespace quadrotor

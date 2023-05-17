@@ -39,10 +39,10 @@
 #include <memory>
 #include <random>
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
-#include "common/utils.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
+#include "quadrotor_model/common/utils.hpp"
 
 namespace quadrotor {
 

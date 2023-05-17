@@ -170,6 +170,8 @@ $$ \tau_m = k_t \cdot \omega_m^2 $$
 
 In the following quadrotor scheme, the forces and moments produced by the motors are shown in the body frame. Each motor contribute to the total force and torque applied to the quadrotor in the body frame.
 
+Note: For X configuration, see [X configuration](XConfiguration.md).
+
 ![quadrotor_scheme](resources/quadrotor_scheme.svg)
 
 ### **2.1 Forces**

@@ -31,46 +31,24 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include "common/utils.hpp"
+#include "quadrotor_model/common/utils.hpp"
 
 using namespace quadrotor;
 
-/**
- * @brief Clamp a vector between a min and a max
- *
- * @param vector Vector to be clamped
- * @param min Minimum value
- * @param max Maximum value
- */
-inline void utils::clamp_vector(Eigen::Vector3f &vector, const float min, const float max) {
+void utils::clamp_vector(Eigen::Vector3f &vector, const float min, const float max) {
   for (int i = 0; i < 3; i++) {
     std::clamp(vector(i), min, max);
   }
   return;
 }
 
-/**
- * @brief Clamp a vector between a min and a max
- *
- * @param vector Vector to be clamped
- * @param min Minimum value
- * @param max Maximum value
- */
-inline void clamp_vector(Eigen::Vector4f &vector, const float min, const float max) {
+void utils::clamp_vector(Eigen::Vector4f &vector, const float min, const float max) {
   for (int i = 0; i < 4; i++) {
-    std::clamp(vector(i), min, max);
+    vector(i) = std::clamp(vector(i), min, max);
   }
   return;
 }
 
-/**
- * @brief Get the quaternion derivative object
- *
- * @param q Quaternion to be derived
- * @param omega Angular velocity
- *
- * @return Eigen::Vector4f Quaternion derivative
- */
 Eigen::Vector4f utils::get_quaternion_derivative(const Eigen::Quaternionf &q,
                                                  const Eigen::Vector3f &omega) {
   Eigen::Quaternionf omega_q;
@@ -79,15 +57,6 @@ Eigen::Vector4f utils::get_quaternion_derivative(const Eigen::Quaternionf &q,
   return 0.5f * (q * omega_q).coeffs();
 };
 
-/**
- * @brief Get the quaternion integrate
- *
- * @param q Quaternion to be integrated
- * @param omega Angular velocity
- * @param dt Time step
- *
- * @return Eigen::Quaternionf
- */
 Eigen::Quaternionf utils::get_quaternion_integrate(const Eigen::Quaternionf &q,
                                                    const Eigen::Vector3f &omega,
                                                    const float dt) {
@@ -96,3 +65,67 @@ Eigen::Quaternionf utils::get_quaternion_integrate(const Eigen::Quaternionf &q,
   quaternion_integrate.coeffs() += q_derivate * dt;
   return quaternion_integrate;
 };
+
+/**
+ * @brief Compute Vector squared wise product, keeping the sign
+ *
+ * @param vector Vector to be squared
+ *
+ * @return Eigen::Vector3f Squared vector
+ */
+Eigen::Vector3f utils::squared_keep_sign(const Eigen::Vector3f &vector) {
+  return vector.array().abs2() * vector.array().sign();
+}
+
+/**
+ * @brief Compute Vector squared wise product, keeping the sign
+ *
+ * @param vector Vector to be squared
+ *
+ * @return Eigen::Vector3f Squared vector
+ */
+Eigen::Vector4f utils::squared_keep_sign(const Eigen::Vector4f &vector) {
+  return vector.array().abs2() * vector.array().sign();
+}
+
+/**
+ * @brief Compute Vector square root wise product, keeping the sign
+ *
+ * @param vector Vector to be squared root
+ *
+ * @return Eigen::Vector3f Squared root vector
+ */
+Eigen::Vector3f utils::sqrt_keep_sign(const Eigen::Vector3f &vector) {
+  // Stored the sign of each element
+  Eigen::Vector3f sign = vector.array().sign();
+
+  // Set each element to its absolute value
+  Eigen::Vector3f abs_vector = vector.array().abs();
+
+  // Compute the square root of each element
+  Eigen::Vector3f sqrt_vector = abs_vector.array().sqrt();
+
+  // Multiply each element by its sign
+  return sqrt_vector.array() * sign.array();
+}
+
+/**
+ * @brief Compute Vector square root wise product, keeping the sign
+ *
+ * @param vector Vector to be squared root
+ *
+ * @return Eigen::Vector4f Squared root vector
+ */
+Eigen::Vector4f utils::sqrt_keep_sign(const Eigen::Vector4f &vector) {
+  // Stored the sign of each element
+  Eigen::Vector4f sign = vector.array().sign();
+
+  // Set each element to its absolute value
+  Eigen::Vector4f abs_vector = vector.array().abs();
+
+  // Compute the square root of each element
+  Eigen::Vector4f sqrt_vector = abs_vector.array().sqrt();
+
+  // Multiply each element by its sign
+  return sqrt_vector.array() * sign.array();
+}

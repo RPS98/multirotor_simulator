@@ -38,9 +38,9 @@
 #include <memory>
 #include "pid_controller/PID_3D.hpp"
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
 
 namespace quadrotor {
 
@@ -48,20 +48,85 @@ class FlightController {
 public:
   FlightController(std::shared_ptr<Model> model,
                    Eigen::Vector3f kp,
-                   Eigen::Vector3f ki,
-                   Eigen::Vector3f kd);
+                   Eigen::Vector3f ki   = Eigen::Vector3f(0.0, 0.0, 0.0),
+                   Eigen::Vector3f kd   = Eigen::Vector3f(0.0, 0.0, 0.0),
+                   float antiwindup_cte = 1000.0f,
+                   float alpha          = 0.1f);
+
   ~FlightController();
 
 public:
-  void acro_to_motor_speeds(const actuation::Acro& acro,
-                            const Eigen::Vector3f& current_angular_velocity,
-                            actuation::MotorW& motor_speeds);
+  Eigen::Vector4f acro_to_motor_speeds(const actuation::Acro& acro,
+                                       const Eigen::Vector3f& current_angular_velocity,
+                                       const float dt);
+
+  void reset_controller();
 
 private:
   std::shared_ptr<Model> model_;
 
   // PID controller
   pid_controller::PIDController3D pid_controller_;
+
+  // Allocation matrix
+  // [w1²]   [  thrust_c,  thrust_c,  thrust_c, thrust_c]^-1   [Ft]
+  // [w2²] = [[ motors_frame_thrust_coefficient_matrix ]]    * [tx]
+  // [w3²]   [[                +                       ]]      [ty]
+  // [w4²]   [[ motors_frame_torque_coefficient_matrix ]]      [tz]
+  Eigen::Matrix4f allocation_matrix_     = Eigen::Matrix4f::Zero();
+  Eigen::Matrix4f allocation_matrix_inv_ = Eigen::Matrix4f::Zero();
+
+  // Intermediate variables
+  Eigen::Vector4f motor_speeds_angular_velocity_ = Eigen::Vector4f::Zero();
+  Eigen::Vector3f angular_acceleration_          = Eigen::Vector3f::Zero();
+  Eigen::Vector3f torque_desired_                = Eigen::Vector3f::Zero();
+
+public:
+  /* Getters */
+
+  /**
+   * @brief Get the pid controller object
+   *
+   * @return pid_controller::PIDController3D
+   */
+  inline pid_controller::PIDController3D get_pid_controller() const { return pid_controller_; }
+
+  /**
+   * @brief Get the allocation matrix object
+   *
+   * @return Eigen::Matrix4f
+   */
+  inline Eigen::Matrix4f get_allocation_matrix() const { return allocation_matrix_; }
+
+  /**
+   * @brief Get the allocation matrix inv object
+   *
+   * @return Eigen::Matrix4f
+   */
+  inline Eigen::Matrix4f get_allocation_matrix_inv() const { return allocation_matrix_inv_; }
+
+  /**
+   * @brief Get the motor speeds angular velocity object
+   *
+   * @return Eigen::Vector4f
+   */
+  inline Eigen::Vector4f get_motor_speeds_angular_velocity() const {
+    return motor_speeds_angular_velocity_;
+  }
+
+  /**
+   * @brief Get the angular acceleration object
+   *
+   * @return Eigen::Vector3f
+   */
+  inline Eigen::Vector3f get_angular_acceleration() const { return angular_acceleration_; }
+
+  /**
+   * @brief Get the torque desired object
+   *
+   * @return Eigen::Vector3f
+   */
+  inline Eigen::Vector3f get_torque_desired() const { return torque_desired_; }
 
 };  // class FlightController
 

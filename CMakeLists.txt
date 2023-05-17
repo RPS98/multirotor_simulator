@@ -12,6 +12,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# set fPIC to ON by default
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Download the pid_controller from github
 find_package(pid_controller QUIET)
 
@@ -63,13 +66,26 @@ set(SOURCE_CPP_FILES
 )
 
 # create library and export it
-add_library(${PROJECT_NAME} SHARED
-  ${SOURCE_CPP_FILES})
+add_library(${PROJECT_NAME} ${SOURCE_CPP_FILES})
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 ament_target_dependencies(${PROJECT_NAME} ${PROJECT_DEPENDENCIES})
+ament_export_include_directories(include)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${PROJECT_DEPENDENCIES})
+ament_export_libraries(${PROJECT_NAME})
 
-# install library
-install(TARGETS ${PROJECT_NAME}
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -77,22 +93,12 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-# install headers
-install(DIRECTORY include/
-  DESTINATION include/
-)
-
-# export targets
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-
-# export dependencies
-ament_export_dependencies(${PROJECT_DEPENDENCIES})
-
 # check if tests are enabled
 if(BUILD_TESTING)
   find_package(ament_cmake_cppcheck REQUIRED)
   find_package(ament_cmake_clang_format REQUIRED)
   find_package(benchmark REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
 
   ament_cppcheck(src/ include/ tests/)
   ament_clang_format(src/ include/ tests/ --config ${CMAKE_CURRENT_SOURCE_DIR}/.clang-format)
@@ -103,8 +109,19 @@ if(BUILD_TESTING)
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
     add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES})
+    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
     target_link_libraries(${PROJECT_NAME}_${TEST_NAME} benchmark ${PROJECT_NAME})
+  endforeach()
+
+  file(GLOB TEST_SOURCE "tests/*_gtest.cpp")
+
+  foreach(TEST_FILE ${TEST_SOURCE})
+    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+
+    ament_add_gtest(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
+
+    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
+    target_link_libraries(${PROJECT_NAME}_${TEST_NAME} gtest_main ${PROJECT_NAME})
   endforeach()
 endif()
 

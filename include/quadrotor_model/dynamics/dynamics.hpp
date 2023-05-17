@@ -37,10 +37,10 @@
 #include <iostream>
 #include <memory>
 
-#include "common/actuation.hpp"
-#include "common/model.hpp"
-#include "common/state.hpp"
-#include "common/utils.hpp"
+#include "quadrotor_model/common/actuation.hpp"
+#include "quadrotor_model/common/model.hpp"
+#include "quadrotor_model/common/state.hpp"
+#include "quadrotor_model/common/utils.hpp"
 
 namespace quadrotor {
 
@@ -56,12 +56,11 @@ public:
 private:
   std::shared_ptr<Model> model_;
   std::shared_ptr<State> state_;
-  std::shared_ptr<State> last_state_;
 
   float dt_;
   Eigen::Vector4f motor_acceleration_ = Eigen::Vector4f::Zero();
 
-private:
+protected:
   static Eigen::Vector4f get_motors_angular_velocity_derivative(
       const Eigen::Vector4f &desired_angular_velocity,
       const Eigen::Vector4f &current_angular_velocity,
@@ -100,7 +99,6 @@ private:
       const Eigen::Vector3f &external_force,
       Eigen::Vector3f &vehicle_total_force);
 
-  // void motor_dynamics(Eigen::Vector4f &desired_angular_velocity);
 };  // class Dynamics
 
 }  // namespace quadrotor
