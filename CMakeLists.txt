@@ -29,14 +29,18 @@ else(${pid_controller_FOUND})
     GIT_TAG main
   )
   FetchContent_MakeAvailable(pid_controller)
+
+  FetchContent_GetProperties(pid_controller)
+  if(NOT pid_controller_POPULATED)
+    FetchContent_Populate(pid_controller)
+    add_subdirectory(${pid_controller_SOURCE_DIR} ${pid_controller_BINARY_DIR})
+  endif()
 endif(${pid_controller_FOUND})
 
 # find dependencies
 set(PROJECT_DEPENDENCIES
   ament_cmake
   Eigen3
-
-  pid_controller
 )
 
 foreach(DEPENDENCY ${PROJECT_DEPENDENCIES})
@@ -73,10 +77,10 @@ target_include_directories(${PROJECT_NAME}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(${PROJECT_NAME} ${PROJECT_DEPENDENCIES})
+ament_target_dependencies(${PROJECT_NAME} ${PROJECT_DEPENDENCIES} pid_controller)
 ament_export_include_directories(include)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(${PROJECT_DEPENDENCIES})
+ament_export_dependencies(${PROJECT_DEPENDENCIES} pid_controller)
 ament_export_libraries(${PROJECT_NAME})
 
 install(
@@ -115,7 +119,7 @@ if(BUILD_TESTING)
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
     add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
+    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES} pid_controller)
     target_link_libraries(${PROJECT_NAME}_${TEST_NAME} benchmark ${PROJECT_NAME})
   endforeach()
 
@@ -126,7 +130,7 @@ if(BUILD_TESTING)
 
     ament_add_gtest(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
 
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES})
+    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES} ${TEST_DEPENDENCIES} pid_controller)
     target_link_libraries(${PROJECT_NAME}_${TEST_NAME} gtest_main ${PROJECT_NAME})
   endforeach()
 endif()
