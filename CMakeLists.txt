@@ -95,10 +95,16 @@ install(
 
 # check if tests are enabled
 if(BUILD_TESTING)
-  find_package(ament_cmake_cppcheck REQUIRED)
-  find_package(ament_cmake_clang_format REQUIRED)
-  find_package(benchmark REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
+  set(TEST_DEPENDENCIES
+    ament_cmake_cppcheck
+    ament_cmake_clang_format
+    benchmark
+    ament_cmake_gtest
+  )
+
+  foreach(DEPENDENCY ${TEST_DEPENDENCIES})
+    find_package(${DEPENDENCY} REQUIRED)
+  endforeach()
 
   ament_cppcheck(src/ include/ tests/)
   ament_clang_format(src/ include/ tests/ --config ${CMAKE_CURRENT_SOURCE_DIR}/.clang-format)
