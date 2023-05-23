@@ -228,6 +228,15 @@ void IMU::get_measurement(state::Kinematics& measurement) const {
 }
 
 /**
+ * @brief Get the IMU angular velocity.
+ *
+ * @param angular_velocity
+ */
+void IMU::get_angular_velocity(Eigen::Vector3f& angular_velocity) const {
+  angular_velocity = angular_velocity_;
+}
+
+/**
  * @brief Process the IMU bias.
  *
  * @param dt Time step.

@@ -73,6 +73,8 @@ public:
 
   void get_measurement(state::Kinematics& measurement) const;
 
+  void get_angular_velocity(Eigen::Vector3f& angular_velocity) const;
+
   // Setters
   void set_random_seed(const int seed);
 

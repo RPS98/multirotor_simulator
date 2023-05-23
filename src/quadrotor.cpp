@@ -101,8 +101,10 @@ inline void Quadrotor::apply_floor_force() {
 
 inline void Quadrotor::acro_to_motor_speeds(const actuation::Acro& actuation, const float dt) {
   // Convert from Acro to MotorW
+  static Eigen::Vector3f vehicle_angular_velocity;
+  imu_->get_angular_velocity(vehicle_angular_velocity);
   actuation_motor_w_.angular_velocity =
-      flight_controller_->acro_to_motor_speeds(actuation, state_->kinematics.angular_velocity, dt);
+      flight_controller_->acro_to_motor_speeds(actuation, vehicle_angular_velocity, dt);
 }
 
 inline void Quadrotor::process_euler_explicit(float dt) {
