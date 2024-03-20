@@ -1,0 +1,92 @@
+sim_config:
+  sim_time: 60.0 # s
+  dt: 0.001 # s
+  trajectory_generator_max_speed: 10.0 # m/s
+  trajectory_generator_waypoints:
+  - [ 10.0, -10.0, 6.0]
+  - [ 10.0,  10.0, 3.0]
+  - [-10.0, -10.0, 6.0]
+  - [-10.0,  10.0, 3.0]
+  - [ 0.0,  0.0, 3.0]
+  velocity_references:
+  - [0.0, 0.0, 2.0]
+  - [0.0, 0.0, 0.0]
+  - [1.0, 0.0, 0.0]
+  - [0.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0]
+  - [1.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0]
+  position_references:
+  - [ 0.0, 0.0, 1.0]
+  - [ 0.0, 0.0, 2.0]
+  - [ 0.0, 0.0, 1.0]
+  - [ 1.0, 0.0, 1.0]
+  - [ 0.0, 0.0, 1.0]
+  - [ 0.0, 1.0, 1.0]
+  - [ 0.0, 0.0, 1.0]
+  - [ 1.0, 1.0, 1.0]
+  - [ 0.0, 0.0, 1.0]
+  floor_height: 0.0
+dynamics:
+  state:
+    position: [0.0, 0.0, 0.0] # x, y, z
+    orientation: [1.0, 0.0, 0.0, 0.0] # qw, qx, qy, qz
+    linear_velocity: [0.0, 0.0, 0.0] # vx, vy, vz
+    angular_velocity: [0.0, 0.0, 0.0] # wx, wy, wz
+    linear_acceleration: [0.0, 0.0, 0.0] # ax, ay, az
+    angular_acceleration: [0.0, 0.0, 0.0] # dwx, dwy, dwz
+  model:
+    gravity: [0.0, 0.0, -9.81] # m/s^2
+    vehicle_mass: 1.0 # kg
+    vehicle_inertia: [0.0049, 0.0049, 0.0069] # kg*m^2
+    vehicle_drag_coefficient: 0.1 # N/(m/s)^2
+    vehicle_aero_moment_coefficient: [0.003, 0.003, 0.003] # Nm/(m/s)^2
+    force_process_noise_auto_correlation: 0.0005 # (N/(rad/s)^2)^2
+    moment_process_noise_auto_correlation: 1.25e-7 # (Nm/(rad/s)^2)^2
+    motors_params:
+      thrust_coefficient: 1.91e-6 # N/(rad/s)^2
+      torque_coefficient: 2.6e-7 # Nm/(rad/s)^2
+      x_dist: 0.08 # m
+      y_dist: 0.08 # m
+      min_speed: 0.0 # rad/s
+      max_speed: 2200.0 # rad/s
+      time_constant: 0.02 # s
+      rotational_inertia: 6.62e-6 # kg*m^2
+controller:
+  indi:
+    Kp: [9.0, 9.0, 9.0]
+    Ki: [3.0, 3.0, 3.0]
+    Kd: [0.3, 0.3, 0.3]
+    alpha: [0.6, 0.6, 0.6]
+    antiwindup_cte: [1.0, 1.0, 1.0]
+    angular_acceleration_limit: [0.0, 0.0, 0.0] # rad/s^2
+  acro:
+    kp_rot: [20.0, 20.0, 8.0]
+  trajectory:
+    Kp: [10.0, 10.0, 10.0]
+    Ki: [0.005, 0.005, 0.005]
+    Kd: [6.0, 6.0, 6.0]
+    antiwindup_cte: [1.0, 1.0, 1.0]
+    linear_acceleration_limit: [0.0, 0.0, 0.0] # m/s^2
+  velocity:
+    Kp: [6.0, 6.0, 10.0]
+    Ki: [1.0, 1.0, 2.0]
+    Kd: [0.4, 0.4, 0.0]
+    alpha: [0.05, 0.05, 0.0]
+    antiwindup_cte: [1.0, 1.0, 1.0]
+    acceleration_limit: [4.0, 4.0, 4.0] # m/s^2
+  position:
+    Kp: [1.0, 1.0, 1.0]
+    Ki: [0.01, 0.01, 0.01]
+    Kd: [0.0, 0.0, 0.0]
+    alpha: [0.1, 0.1, 0.0]
+    antiwindup_cte: [0.5, 0.5, 0.5]
+    velocity_limit: [10.0, 10.0, 10.0] # m/s
+imu:
+  gyro_noise_var: 0.003 # rad/s
+  accel_noise_var: 0.005 # m/s^2
+  gyro_bias_noise_autocorr_time: 1.0e-7 # s
+  accel_bias_noise_autocorr_time: 1.0e-7 # s
+inertial_odometry:
+  alpha: 0.9
