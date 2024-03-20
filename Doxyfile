@@ -114,8 +114,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ./include/multirotor_simulator \
-                         ./submodules/
+INPUT                  = ./multirotor_simulator \
+                         ./pid_controller/
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \
