@@ -286,6 +286,11 @@ public:
    * @param control_mode ControlMode Control mode
    */
   inline void set_control_mode(const ControlMode &control_mode) {
+    // If the control mode is the same, do nothing
+    if (control_mode_ == control_mode) {
+      return;
+    }
+
     control_mode_ = control_mode;
     if (control_mode_ == HOVER) {
       reference_position_     = dynamics_.get_state_const().kinematics.position;
