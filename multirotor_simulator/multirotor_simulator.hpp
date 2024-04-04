@@ -133,7 +133,7 @@ public:
     }
     dynamics_.process_euler_explicit(actuation_motors_angular_velocity_, dt, external_force_,
                                      !floor_collision_);
-    external_force_ = Vector3::Zero();
+    external_force_  = Vector3::Zero();
     floor_collision_ = false;
     if (floor_collision_enable_ && dynamics_.get_state().kinematics.position.z() < floor_height_) {
       floor_collision_ = true;
@@ -161,18 +161,6 @@ public:
     }
 
     switch (control_mode_) {
-      case HOVER: {
-        Vector3 reference_velocity     = Vector3::Zero();
-        Vector3 reference_acceleration = Vector3::Zero();
-
-        set_actuation(controller_.compute_trajectory_control(
-            dynamics_.get_state_const().kinematics.position,
-            dynamics_.get_state_const().kinematics.linear_velocity,
-            dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state_const().kinematics.angular_velocity, reference_hover_position_,
-            reference_velocity, reference_acceleration, reference_hover_yaw_, dt));
-        break;
-      }
       case MOTOR_W: {
         set_actuation(reference_motors_angular_velocity_);
         break;
@@ -201,6 +189,15 @@ public:
         break;
       }
       case POSITION: {
+        set_actuation(controller_.compute_position_control(
+            dynamics_.get_state_const().kinematics.position,
+            dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
+            dynamics_.get_state_const().kinematics.linear_velocity,
+            dynamics_.get_state_const().kinematics.angular_velocity, reference_position_,
+            reference_yaw_, dt));
+        break;
+      }
+      case HOVER: {
         set_actuation(controller_.compute_position_control(
             dynamics_.get_state_const().kinematics.position,
             dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
@@ -267,12 +264,21 @@ public:
     armed_                             = false;
   }
 
+  /**
+   * @brief Enable floor collision
+   *
+   * @param floor_height Scalar Floor height (m)
+   */
   void enable_floor_collision(const Scalar floor_height = 0.0) {
     floor_collision_enable_ = true;
     floor_height_           = floor_height;
     external_force_         = Vector3::Zero();
   }
 
+  /**
+   * @brief Disable floor collision
+   *
+   */
   inline void disable_floor_collision() {
     floor_collision_enable_ = false;
     external_force_         = Vector3::Zero();
@@ -291,19 +297,13 @@ public:
       return;
     }
 
-    control_mode_ = control_mode;
-    if (control_mode_ == HOVER) {
-      reference_position_     = dynamics_.get_state_const().kinematics.position;
-      reference_velocity_     = Vector3::Zero();
-      reference_acceleration_ = Vector3::Zero();
-      Scalar roll, pitch;
-      state::internal::quaternion_to_Euler(dynamics_.get_state_const().kinematics.orientation, roll,
-                                           pitch, reference_yaw_);
-    }
-    reference_position_         = Eigen::Vector3d::Zero();
+    control_mode_       = control_mode;
+    reference_position_ = dynamics_.get_state_const().kinematics.position;
+    Scalar roll, pitch;
+    state::internal::quaternion_to_Euler(dynamics_.get_state_const().kinematics.orientation, roll,
+                                         pitch, reference_yaw_);
     reference_velocity_         = Eigen::Vector3d::Zero();
     reference_acceleration_     = Eigen::Vector3d::Zero();
-    reference_yaw_              = 0.0;
     reference_thrust_           = 0.0;
     reference_angular_velocity_ = Eigen::Vector3d::Zero();
   }
@@ -584,15 +584,11 @@ private:
   Scalar reference_thrust_            = 0.0;
   Vector3 reference_angular_velocity_ = Vector3::Zero();
 
-  // Trajectory
+  // Trajectory, Position, Velocity
   Vector3 reference_position_     = Vector3::Zero();
   Vector3 reference_velocity_     = Vector3::Zero();
   Vector3 reference_acceleration_ = Vector3::Zero();
   Scalar reference_yaw_           = 0.0;
-
-  // Hover
-  Vector3 reference_hover_position_ = Vector3::Zero();
-  Scalar reference_hover_yaw_       = 0.0;
 
   // Actuation Commands
   VectorN actuation_motors_angular_velocity_ = VectorN::Zero();
