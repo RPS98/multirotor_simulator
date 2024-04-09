@@ -145,6 +145,78 @@ public:
     return;
   }
 
+  /**
+   * @brief Reset the IMU bias and measurement.
+   */
+  void reset() {
+    // Reset bias
+    gyro_bias_  = Vector3::Zero();
+    accel_bias_ = Vector3::Zero();
+
+    // Reset measurement
+    gyro_  = Vector3::Zero();
+    accel_ = Vector3::Zero();
+  }
+
+  // Setters
+
+  /**
+   * @brief Set the random seed for the random number generator.
+   *
+   * @param seed Random seed.
+   */
+  inline void set_random_seed(const int seed) { random_number_generator_.seed(seed); }
+
+  /**
+   * @brief Set the noise variances for the IMU.
+   *
+   * @param gyro_noise_var Gyroscope noise variance.
+   * @param accel_noise_var Accelerometer noise variance.
+   */
+  inline void set_noise_variances(const Scalar gyro_noise_var, const Scalar accel_noise_var) {
+    gyro_noise_var_  = gyro_noise_var;
+    accel_noise_var_ = accel_noise_var;
+  }
+
+  /**
+   * @brief Set the autocorrelation time for the IMU bias.
+   *
+   * @param gyro_bias_noise_autocorr_time Gyroscope bias autocorrelation time.
+   * @param accel_bias_noise_autocorr_time Accelerometer bias autocorrelation time.
+   */
+  inline void set_bias_autocorrelation_time(const Scalar gyro_bias_noise_autocorr_time,
+                                            const Scalar accel_bias_noise_autocorr_time) {
+    gyro_bias_noise_autocorr_time_  = gyro_bias_noise_autocorr_time;
+    accel_bias_noise_autocorr_time_ = accel_bias_noise_autocorr_time;
+  }
+
+  /**
+   * @brief Set the IMU bias.
+   *
+   * @param gyro_bias Gyroscope bias.
+   * @param accel_bias Accelerometer bias.
+   * @param gyro_bias_noise_autocorr_time Gyroscope bias autocorrelation time.
+   * @param accel_bias_noise_autocorr_time Accelerometer bias autocorrelation time.
+   */
+  inline void set_bias(const Vector3& gyro_bias,
+                       const Vector3& accel_bias,
+                       const Scalar gyro_bias_noise_autocorr_time,
+                       const Scalar accel_bias_noise_autocorr_time) {
+    gyro_bias_  = gyro_bias;
+    accel_bias_ = accel_bias;
+    set_bias_autocorrelation_time(gyro_bias_noise_autocorr_time, accel_bias_noise_autocorr_time);
+  }
+
+  /**
+   * @brief Set the IMU orientation.
+   *
+   * @param imu_orientation IMU orientation with respect to the body frame.
+   */
+  inline void set_orientation(const Quaternion& imu_orientation) {
+    imu_orientation_        = imu_orientation;
+    imu_orientation_inverse = imu_orientation_.inverse();
+  }
+
   // Getters
 
   /**
@@ -218,16 +290,25 @@ public:
   const Vector3& get_measurement_accel_const() const { return accel_; }
 
   /**
-   * @brief Reset the IMU bias and measurement.
+   * @brief Get IMU bias.
+   *
+   * @param gyro_bias Gyroscope bias.
+   * @param accel_bias Accelerometer bias.
    */
-  void reset() {
-    // Reset bias
-    gyro_bias_  = Vector3::Zero();
-    accel_bias_ = Vector3::Zero();
+  void get_bias(Vector3& gyro_bias, Vector3& accel_bias) const {
+    gyro_bias  = gyro_bias_;
+    accel_bias = accel_bias_;
+  }
 
-    // Reset measurement
-    gyro_  = Vector3::Zero();
-    accel_ = Vector3::Zero();
+  /**
+   * @brief Get IMU variance.
+   *
+   * @param gyro_bias_var Gyroscope bias variance.
+   * @param accel_bias_var Accelerometer bias variance.
+   */
+  void get_variances(Scalar& gyro_bias_var, Scalar& accel_bias_var) const {
+    gyro_bias_var  = gyro_noise_var_;
+    accel_bias_var = accel_noise_var_;
   }
 
 protected:
@@ -255,90 +336,6 @@ protected:
   // Measurement in body frame
   Vector3 gyro_  = Vector3::Zero();  // rad/s
   Vector3 accel_ = Vector3::Zero();  // m/s^2
-
-public:
-  // Setters
-
-  /**
-   * @brief Set the random seed for the random number generator.
-   *
-   * @param seed Random seed.
-   */
-  inline void set_random_seed(const int seed) { random_number_generator_.seed(seed); }
-
-  /**
-   * @brief Set the noise variances for the IMU.
-   *
-   * @param gyro_noise_var Gyroscope noise variance.
-   * @param accel_noise_var Accelerometer noise variance.
-   */
-  inline void set_noise_variances(const Scalar gyro_noise_var, const Scalar accel_noise_var) {
-    gyro_noise_var_  = gyro_noise_var;
-    accel_noise_var_ = accel_noise_var;
-  }
-
-  /**
-   * @brief Set the autocorrelation time for the IMU bias.
-   *
-   * @param gyro_bias_noise_autocorr_time Gyroscope bias autocorrelation time.
-   * @param accel_bias_noise_autocorr_time Accelerometer bias autocorrelation time.
-   */
-  inline void set_bias_autocorrelation_time(const Scalar gyro_bias_noise_autocorr_time,
-                                            const Scalar accel_bias_noise_autocorr_time) {
-    gyro_bias_noise_autocorr_time_  = gyro_bias_noise_autocorr_time;
-    accel_bias_noise_autocorr_time_ = accel_bias_noise_autocorr_time;
-  }
-
-  /**
-   * @brief Set the IMU bias.
-   *
-   * @param gyro_bias Gyroscope bias.
-   * @param accel_bias Accelerometer bias.
-   * @param gyro_bias_noise_autocorr_time Gyroscope bias autocorrelation time.
-   * @param accel_bias_noise_autocorr_time Accelerometer bias autocorrelation time.
-   */
-  inline void set_bias(const Vector3& gyro_bias,
-                       const Vector3& accel_bias,
-                       const Scalar gyro_bias_noise_autocorr_time,
-                       const Scalar accel_bias_noise_autocorr_time) {
-    gyro_bias_  = gyro_bias;
-    accel_bias_ = accel_bias;
-    set_bias_autocorrelation_time(gyro_bias_noise_autocorr_time, accel_bias_noise_autocorr_time);
-  }
-
-  /**
-   * @brief Set the IMU orientation.
-   *
-   * @param imu_orientation IMU orientation with respect to the body frame.
-   */
-  inline void set_orientation(const Quaternion& imu_orientation) {
-    imu_orientation_        = imu_orientation;
-    imu_orientation_inverse = imu_orientation_.inverse();
-  }
-
-  // Getters
-
-  /**
-   * @brief Get IMU bias.
-   *
-   * @param gyro_bias Gyroscope bias.
-   * @param accel_bias Accelerometer bias.
-   */
-  void get_bias(Vector3& gyro_bias, Vector3& accel_bias) const {
-    gyro_bias  = gyro_bias_;
-    accel_bias = accel_bias_;
-  }
-
-  /**
-   * @brief Get IMU variance.
-   *
-   * @param gyro_bias_var Gyroscope bias variance.
-   * @param accel_bias_var Accelerometer bias variance.
-   */
-  void get_variances(Scalar& gyro_bias_var, Scalar& accel_bias_var) const {
-    gyro_bias_var  = gyro_noise_var_;
-    accel_bias_var = accel_noise_var_;
-  }
 
 protected:
   /**
