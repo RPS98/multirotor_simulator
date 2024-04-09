@@ -62,7 +62,7 @@ struct VelocityControllerParams {
  * @tparam P Precision type of the controller
  */
 template <typename P = double>
-class VelocityController {
+class VelocityController : public pid_controller::PID<P> {
   // Check if P is a numeric type
   static_assert(std::is_floating_point<P>::value,
                 "VelocityController must be used with a floating-point type");
@@ -79,16 +79,16 @@ public:
    *
    * @param pid_params PID parameters
    */
-  explicit VelocityController(const PIDParams &pid_params) : pid_(pid_params) {}
+  explicit VelocityController(const PIDParams &pid_params) : PID(pid_params) {}
 
   /**
    * @brief Construct a new VelocityController object
    *
-   * @param pid_params PID parameters
+   * @param params VelocityControllerParams parameters
    */
   explicit VelocityController(
       const VelocityControllerParams<P> &params = VelocityControllerParams<P>())
-      : pid_(params.pid_params) {}
+      : PID(params.pid_params) {}
 
   /**
    * @brief Destroy the VelocityController object
@@ -109,12 +109,12 @@ public:
                                                  const Vector3 &desired_linear_velocity,
                                                  const Scalar dt) {
     // Compute the velocity error
-    velocity_error_ = pid_.get_error(current_linear_velocity, desired_linear_velocity);
+    Vector3 velocity_error = this->get_error(current_linear_velocity, desired_linear_velocity);
 
     // Compute the desired linear velocity
-    desired_linear_acceleration_ = pid_.compute_control(dt, velocity_error_);
+    Vector3 desired_linear_acceleration = this->compute_control(dt, velocity_error);
 
-    return desired_linear_acceleration_;
+    return desired_linear_acceleration;
   }
 
   /**
@@ -122,7 +122,7 @@ public:
    *
    * @param pid_params PID parameters
    */
-  inline void update_pid_params(const PIDParams &pid_params) { pid_.update_params(pid_params); }
+  inline void update_pid_params(const PIDParams &params) { PID::update_params(params); }
 
   /**
    * @brief Update controller parameters
@@ -130,68 +130,25 @@ public:
    * @param params VelocityControllerParams
    */
   inline void update_params(const VelocityControllerParams<P> &params) {
-    update_pid_params(params.pid_params);
+    PID::update_params(params.pid_params);
   }
 
-  /**
-   * @brief Reset controller
-   */
-  inline void reset_controller() { pid_.reset_controller(); }
-
   // Getters
-
-  /**
-   * @brief Get the PID
-   *
-   * @return PID
-   */
-  inline PID get_pid() const { return pid_; }
-
-  /**
-   * @brief Get the PID
-   *
-   * @return const PID&
-   */
-  inline const PID &get_pid_const() const { return pid_; }
 
   /**
    * @brief Get the desired linear acceleration
    *
    * @return Vector3 Desired linear acceleration (m/s)
    */
-  inline Vector3 get_desired_linear_acceleration() const { return desired_linear_acceleration_; }
-
-  /**
-   * @brief Get the desired linear acceleration
-   *
-   * @return constVector3& Desired linear acceleration (m/s)
-   */
-  inline const Vector3 &get_desired_linear_acceleration_const() const {
-    return desired_linear_acceleration_;
-  }
+  inline Vector3 get_desired_linear_acceleration() const { return PID::get_output(); }
 
   /**
    * @brief Get the desired velocity error
    *
    * @return Vector3 Desired velocity error (m)
    */
-  inline Vector3 get_velocity_error() const { return velocity_error_; }
-
-  /**
-   * @brief Get the desired velocity error
-   *
-   * @return constVector3& Desired velocity error (m)
-   */
-  inline const Vector3 &get_velocity_error_const() const { return velocity_error_; }
-
-protected:
-  // PID controller
-  PID pid_;
-
-  // Internal variables
-  Vector3 velocity_error_              = Vector3::Zero();  // Velocity error (m/s)
-  Vector3 desired_linear_acceleration_ = Vector3::Zero();  // Desired linear acceleration (m/s^2)
-};                                                         // Class VelocityController
+  inline Vector3 get_velocity_error() const { return PID::get_proportional_error(); }
+};  // Class VelocityController
 
 }  // namespace velocity_controller
 

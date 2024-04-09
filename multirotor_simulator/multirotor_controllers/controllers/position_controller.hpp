@@ -62,7 +62,7 @@ struct PositionControllerParams {
  * @tparam P Precision type of the controller
  */
 template <typename P = double>
-class PositionController {
+class PositionController : public pid_controller::PID<P> {
   // Check if P is a numeric type
   static_assert(std::is_floating_point<P>::value,
                 "PositionController must be used with a floating-point type");
@@ -75,20 +75,20 @@ class PositionController {
 
 public:
   /**
-   * @brief Construct a new Position Controller object
+   * @brief Construct a new PositionController object
    *
    * @param pid_params PID parameters
    */
-  explicit PositionController(const PIDParams &pid_params) : pid_(pid_params) {}
+  explicit PositionController(const PIDParams &pid_params) : PID(pid_params) {}
 
   /**
-   * @brief Construct a new Position Controller object
+   * @brief Construct a new PositionController object
    *
-   * @param pid_params PID parameters
+   * @param params PositionControllerParams parameters
    */
   explicit PositionController(
       const PositionControllerParams<P> &params = PositionControllerParams<P>())
-      : pid_(params.pid_params) {}
+      : PID(params.pid_params) {}
 
   /**
    * @brief Destroy the Position Controller object
@@ -109,12 +109,12 @@ public:
                                       const Vector3 &desired_position,
                                       const Scalar dt) {
     // Compute the position error
-    position_error_ = pid_.get_error(current_position, desired_position);
+    Vector3 position_error = this->get_error(current_position, desired_position);
 
     // Compute the desired linear velocity
-    desired_linear_velocity_ = pid_.compute_control(dt, position_error_);
+    Vector3 desired_linear_velocity = this->compute_control(dt, position_error);
 
-    return desired_linear_velocity_;
+    return desired_linear_velocity;
   }
 
   /**
@@ -122,76 +122,33 @@ public:
    *
    * @param pid_params PID parameters
    */
-  inline void update_pid_params(const PIDParams &pid_params) { pid_.update_params(pid_params); }
+  inline void update_pid_params(const PIDParams &params) { PID::update_params(params); }
 
   /**
    * @brief Update controller parameters
    *
    * @param params PositionControllerParams
    */
-  inline void update_params(const PositionControllerParams<P> &params) {
-    update_pid_params(params.pid_params);
+  void update_params(const PositionControllerParams<P> &params) {
+    PID::update_params(params.pid_params);
   }
 
-  /**
-   * @brief Reset controller
-   */
-  inline void reset_controller() { pid_.reset_controller(); }
-
   // Getters
-
-  /**
-   * @brief Get the PID
-   *
-   * @return PID
-   */
-  inline PID get_pid() const { return pid_; }
-
-  /**
-   * @brief Get the PID
-   *
-   * @return const PID&
-   */
-  inline const PID &get_pid_const() const { return pid_; }
 
   /**
    * @brief Get the desired linear velocity
    *
    * @return Vector3 Desired linear velocity (m/s)
    */
-  inline Vector3 get_desired_linear_velocity() const { return desired_linear_velocity_; }
-
-  /**
-   * @brief Get the desired linear velocity
-   *
-   * @return constVector3& Desired linear velocity (m/s)
-   */
-  inline const Vector3 &get_desired_linear_velocity_const() const {
-    return desired_linear_velocity_;
-  }
+  inline Vector3 get_desired_linear_velocity() const { return PID::get_output(); }
 
   /**
    * @brief Get the desired position error
    *
    * @return Vector3 Desired position error (m)
    */
-  inline Vector3 get_position_error() const { return position_error_; }
-
-  /**
-   * @brief Get the desired position error
-   *
-   * @return constVector3& Desired position error (m)
-   */
-  inline const Vector3 &get_position_error_const() const { return position_error_; }
-
-protected:
-  // PID controller
-  PID pid_;
-
-  // Internal variables
-  Vector3 position_error_          = Vector3::Zero();  // Position error (m)
-  Vector3 desired_linear_velocity_ = Vector3::Zero();  // Desired linear velocity (m/s)
-};                                                     // Class PositionController
+  inline Vector3 get_position_error() const { return PID::get_proportional_error(); }
+};  // Class PositionController
 
 }  // namespace position_controller
 

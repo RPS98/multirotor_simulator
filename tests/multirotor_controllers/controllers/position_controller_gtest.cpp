@@ -85,12 +85,8 @@ TEST(PositionController, public_methods) {
   EXPECT_NO_THROW(position_controller.reset_controller());
 
   // Getters
-  EXPECT_NO_THROW(position_controller.get_pid());
-  EXPECT_NO_THROW(position_controller.get_pid_const());
   EXPECT_NO_THROW(position_controller.get_desired_linear_velocity());
-  EXPECT_NO_THROW(position_controller.get_desired_linear_velocity_const());
   EXPECT_NO_THROW(position_controller.get_position_error());
-  EXPECT_NO_THROW(position_controller.get_position_error_const());
 }
 
 TEST(PositionController, position_to_linear_velocity) {

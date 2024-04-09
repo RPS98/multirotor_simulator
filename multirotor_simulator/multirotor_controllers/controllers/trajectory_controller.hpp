@@ -62,7 +62,7 @@ struct TrajectoryControllerParams {
  * @tparam P Precision type of the controller
  */
 template <typename P = double>
-class TrajectoryController {
+class TrajectoryController : public pid_controller::PID<P> {
   // Check if P is a numeric type
   static_assert(std::is_floating_point<P>::value,
                 "MotorParams must be used with a floating-point type");
@@ -76,23 +76,20 @@ class TrajectoryController {
 
 public:
   /**
-   * @brief Construct a new Geometric Controller object
+   * @brief Construct a new TrajectoryController object
    *
-   * @param vehicle_mass Scalar with the vehicle mass
-   * @param kp_rot Matrix3 with the proportional gains for the rotation
    * @param pid_params PID parameters
-   * @param gravity Vector3 with the gravity vector
    */
-  explicit TrajectoryController(const PIDParams& pid_params) : pid_(pid_params) {}
+  explicit TrajectoryController(const PIDParams& pid_params) : PID(pid_params) {}
 
   /**
-   * @brief Construct a new Geometric Controller object
+   * @brief Construct a new TrajectoryController object
    *
-   * @param params ControllerParams
+   * @param params TrajectoryControllerParams parameters
    */
   explicit TrajectoryController(
       const TrajectoryControllerParams<P>& params = TrajectoryControllerParams<P>())
-      : pid_(params.pid_params) {}
+      : PID(params.pid_params) {}
 
   /**
    * @brief Destroy the Geometric Controller object
@@ -120,14 +117,14 @@ public:
                                             const Vector3& desired_acceleration,
                                             const Scalar dt) {
     // Compute trajectory errors
-    position_error_ = pid_.get_error(current_position, desired_position);
-    velocity_error_ = pid_.get_error(current_velocity, desired_velocity);
+    Vector3 position_error = this->get_error(current_position, desired_position);
+    Vector3 velocity_error = this->get_error(current_velocity, desired_velocity);
 
     // Compute desired acceleration
-    desired_acceleration_ =
-        pid_.compute_control(dt, position_error_, velocity_error_) + desired_acceleration;
+    Vector3 desired_acceleration_computed =
+        this->compute_control(dt, position_error, velocity_error) + desired_acceleration;
 
-    return desired_acceleration_;
+    return desired_acceleration_computed;
   }
 
   /**
@@ -135,7 +132,7 @@ public:
    *
    * @param pid_params PID parameters
    */
-  inline void update_pid_params(const PIDParams& pid_params) { pid_.update_params(pid_params); }
+  inline void update_pid_params(const PIDParams& pid_params) { PID::update_params(pid_params); }
 
   /**
    * @brief Update controller parameters
@@ -143,82 +140,31 @@ public:
    * @param params TrajectoryControllerParams
    */
   inline void update_params(const TrajectoryControllerParams<P>& params) {
-    update_pid_params(params.pid_params);
+    PID::update_params(params.pid_params);
   }
 
-  /**
-   * @brief Reset controller
-   */
-  inline void reset_controller() { pid_.reset_controller(); }
-
   // Getters
-
-  /**
-   * @brief Get the PID
-   *
-   * @return PID
-   */
-  inline PID get_pid() const { return pid_; }
-
-  /**
-   * @brief Get the PID
-   *
-   * @return const PID&
-   */
-  inline const PID& get_pid_const() const { return pid_; }
 
   /**
    * @brief Get the desired linear acceleration
    *
    * @return Vector3 Desired linear acceleration (m/s^2)
    */
-  inline Vector3 get_desired_linear_acceleration() const { return desired_acceleration_; }
-
-  /**
-   * @brief Get the desired linear acceleration
-   *
-   * @return const Vector3& Desired linear acceleration (m/s^2)
-   */
-  inline const Vector3& get_desired_linear_acceleration_const() const {
-    return desired_acceleration_;
-  }
+  inline Vector3 get_desired_linear_acceleration() const { return PID::get_output(); }
 
   /**
    * @brief Get the position error
    *
    * @return Vector3 Position error (m)
    */
-  inline Vector3 get_position_error() const { return position_error_; }
-
-  /**
-   * @brief Get the position error
-   *
-   * @return const Vector3& Position error (m)
-   */
-  inline const Vector3& get_position_error_const() const { return position_error_; }
+  inline Vector3 get_position_error() const { return PID::get_proportional_error(); }
 
   /**
    * @brief Get the velocity error
    *
    * @return Vector3 Velocity error (m/s)
    */
-  inline Vector3 get_velocity_error() const { return velocity_error_; }
-
-  /**
-   * @brief Get the velocity error
-   *
-   * @return const Vector3& Velocity error (m/s)
-   */
-  inline const Vector3& get_velocity_error_const() const { return velocity_error_; }
-
-protected:
-  // PID controller
-  PID pid_;
-
-  // Internal variables
-  Vector3 position_error_       = Vector3::Zero();  // Position error (m)
-  Vector3 velocity_error_       = Vector3::Zero();  // Velocity error (m/s)
-  Vector3 desired_acceleration_ = Vector3::Zero();  // Desired linear acceleration (m/s^2)
+  inline Vector3 get_velocity_error() const { return PID::get_derivative_error(); }
 };
 }  // namespace trajectory_controller
 
