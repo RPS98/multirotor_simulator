@@ -120,8 +120,15 @@ protected:
   // PID state
   bool first_run_                 = true;            // First run flag
   Vector integral_accum_error_    = Vector::Zero();  // Integral accumulator error
-  Vector last_proportional_error_ = Vector::Zero();  // Last proportional error
   Vector filtered_derivate_error_ = Vector::Zero();  // Filtered derivative error
+
+  // Error and output storage (for debugging purposes)
+  Vector proportional_error_              = Vector::Zero();  // Proportional error
+  Vector derivative_error_                = Vector::Zero();  // Derivative error
+  Vector proportional_error_contribution_ = Vector::Zero();  // Proportional error contribution
+  Vector integral_error_contribution_     = Vector::Zero();  // Integral error contribution
+  Vector derivate_error_contribution_     = Vector::Zero();  // Derivative error contribution
+  Vector output_                          = Vector::Zero();  // Output
 
 public:
   // Public methods
@@ -244,34 +251,34 @@ public:
     if (first_run_) {
       first_run_               = false;
       integral_accum_error_    = Vector::Zero();
-      last_proportional_error_ = proportional_error;
+      proportional_error_      = proportional_error;
       filtered_derivate_error_ = Vector::Zero();
     }
 
     // Compute the proportional contribution
-    Vector proportional_error_contribution = Kp_lin_mat_ * proportional_error;
+    proportional_error_contribution_ = Kp_lin_mat_ * proportional_error;
 
     // Compute de integral contribution
-    Vector integral_error_contribution = compute_integral_contribution(dt, proportional_error);
+    integral_error_contribution_ = compute_integral_contribution(dt, proportional_error);
 
     // Compute the derivate contribution
-    Vector derivate_error_contribution =
+    derivate_error_contribution_ =
         compute_derivative_contribution_by_deriving(dt, proportional_error);
 
     // Compute output
-    Vector output =
-        proportional_error_contribution + integral_error_contribution + derivate_error_contribution;
+    output_ = proportional_error_contribution_ + integral_error_contribution_ +
+              derivate_error_contribution_;
 
     // Saturation
     if (saturation_flag_) {
-      output = saturate_output(output, upper_output_saturation_, lower_output_saturation_,
-                               proportional_saturation_flag_);
+      output_ = saturate_output(output_, upper_output_saturation_, lower_output_saturation_,
+                                proportional_saturation_flag_);
     }
 
     // Update last proportional error
-    last_proportional_error_ = proportional_error;
+    proportional_error_ = proportional_error;
 
-    return output;
+    return output_;
   }
 
   /**
@@ -293,33 +300,34 @@ public:
     if (first_run_) {
       first_run_               = false;
       integral_accum_error_    = Vector::Zero();
-      last_proportional_error_ = proportional_error;
+      proportional_error_      = proportional_error;
       filtered_derivate_error_ = Vector::Zero();
     }
 
     // Compute the proportional contribution
-    Vector proportional_error_contribution = Kp_lin_mat_ * proportional_error;
+    proportional_error_contribution_ = Kp_lin_mat_ * proportional_error;
 
     // Compute de integral contribution
-    Vector integral_error_contribution = compute_integral_contribution(dt, proportional_error);
+    integral_error_contribution_ = compute_integral_contribution(dt, proportional_error);
 
     // Compute the derivate contribution
-    Vector derivate_error_contribution = compute_derivative_contribution(derivative_error);
+    derivate_error_contribution_ = compute_derivative_contribution(derivative_error);
 
     // Compute output
-    Vector output =
-        proportional_error_contribution + integral_error_contribution + derivate_error_contribution;
+    output_ = proportional_error_contribution_ + integral_error_contribution_ +
+              derivate_error_contribution_;
 
     // Saturation
     if (saturation_flag_) {
-      output = saturate_output(output, upper_output_saturation_, lower_output_saturation_,
-                               proportional_saturation_flag_);
+      output_ = saturate_output(output_, upper_output_saturation_, lower_output_saturation_,
+                                proportional_saturation_flag_);
     }
 
-    // Update last proportional error
-    last_proportional_error_ = proportional_error;
+    // Update last error
+    proportional_error_ = proportional_error;
+    derivative_error_   = derivative_error;
 
-    return output;
+    return output_;
   }
 
   /**
@@ -561,6 +569,50 @@ public:
    */
   inline bool get_output_saturation_flag() const { return saturation_flag_; }
 
+  /**
+   * @brief Get the proportional error
+   *
+   * @return Vector Proportional error
+   */
+  inline Vector get_proportional_error() const { return proportional_error_; }
+
+  /**
+   * @brief Get the derivative error
+   *
+   * @return Vector Derivative error
+   */
+  inline Vector get_derivative_error() const { return derivative_error_; }
+
+  /**
+   * @brief Get the proportional error contribution
+   *
+   * @return Vector Proportional error contribution
+   */
+  inline Vector get_proportional_error_contribution() const {
+    return proportional_error_contribution_;
+  }
+
+  /**
+   * @brief Get the integral error contribution
+   *
+   * @return Vector Integral error contribution
+   */
+  inline Vector get_integral_error_contribution() const { return integral_error_contribution_; }
+
+  /**
+   * @brief Get the derivative error contribution
+   *
+   * @return Vector Derivative error contribution
+   */
+  inline Vector get_derivative_error_contribution() const { return derivate_error_contribution_; }
+
+  /**
+   * @brief Get the output
+   *
+   * @return Vector Output
+   */
+  inline Vector get_output() const { return output_; }
+
 protected:
   /**
    * @brief Compute the integral contribution of the controller
@@ -607,8 +659,7 @@ protected:
                                                      const Vector &proportional_error) {
     // Compute the derivative contribution of the error filtered with a first
     // order filter
-    Vector derivate_proportional_error_increment =
-        (proportional_error - last_proportional_error_) / dt;
+    Vector derivate_proportional_error_increment = (proportional_error - proportional_error_) / dt;
 
     filtered_derivate_error_ = alpha_.cwiseProduct(derivate_proportional_error_increment) +
                                (Vector::Ones() - alpha_).cwiseProduct(filtered_derivate_error_);

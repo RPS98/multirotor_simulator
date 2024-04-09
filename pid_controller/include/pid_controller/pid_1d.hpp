@@ -112,8 +112,15 @@ private:
   // PID state
   bool first_run_                 = true;  // First run flag
   Scalar integral_accum_error_    = 0.0;   // Integral accumulator error
-  Scalar last_proportional_error_ = 0.0;   // Last proportional error
   Scalar filtered_derivate_error_ = 0.0;   // Filtered derivative error
+
+  // Error and output storage (for debugging purposes)
+  Scalar proportional_error_              = 0.0;  // Proportional error
+  Scalar derivative_error_                = 0.0;  // Derivative error
+  Scalar proportional_error_contribution_ = 0.0;  // Proportional error contribution
+  Scalar integral_error_contribution_     = 0.0;  // Integral error contribution
+  Scalar derivate_error_contribution_     = 0.0;  // Derivative error contribution
+  Scalar output_                          = 0.0;  // Output
 
 public:
   // Public methods
@@ -227,28 +234,31 @@ public:
     if (first_run_) {
       first_run_               = false;
       integral_accum_error_    = 0.0;
-      last_proportional_error_ = proportional_error;
+      proportional_error_      = proportional_error;
       filtered_derivate_error_ = 0.0;
     }
 
     // Compute the proportional contribution
-    Scalar proportional_error_contribution = Kp_ * proportional_error;
+    proportional_error_contribution_ = Kp_ * proportional_error;
 
     // Compute de integral contribution (position integrate)
-    Scalar integral_error_contribution = compute_integral_contribution(dt, proportional_error);
+    integral_error_contribution_ = compute_integral_contribution(dt, proportional_error);
 
     // Compute the derivate contribution
-    Scalar derivate_error_contribution =
+    derivate_error_contribution_ =
         compute_derivative_contribution_by_deriving(dt, proportional_error);
 
     // Compute output velocity
-    Scalar output =
-        proportional_error_contribution + integral_error_contribution + derivate_error_contribution;
+    output_ = proportional_error_contribution_ + integral_error_contribution_ +
+              derivate_error_contribution_;
 
     if (saturation_flag_) {
-      output = saturate_output(output, upper_output_saturation_, lower_output_saturation_);
+      output_ = saturate_output(output_, upper_output_saturation_, lower_output_saturation_);
     }
-    return output;
+
+    // Update last proportional error
+    proportional_error_ = proportional_error;
+    return output_;
   }
 
   /**
@@ -266,27 +276,31 @@ public:
     if (first_run_) {
       first_run_               = false;
       integral_accum_error_    = 0.0;
-      last_proportional_error_ = proportional_error;
+      proportional_error_      = proportional_error;
       filtered_derivate_error_ = 0.0;
     }
 
     // Compute the proportional contribution
-    Scalar proportional_error_contribution = Kp_ * proportional_error;
+    proportional_error_contribution_ = Kp_ * proportional_error;
 
-    // // Compute de integral contribution (position integrate)
-    Scalar integral_error_contribution = compute_integral_contribution(dt, proportional_error);
+    // Compute de integral contribution (position integrate)
+    integral_error_contribution_ = compute_integral_contribution(dt, proportional_error);
 
-    // // Compute the derivate contribution
-    Scalar derivate_error_contribution = compute_derivative_contribution(derivative_error);
+    // Compute the derivate contribution
+    derivate_error_contribution_ = compute_derivative_contribution(derivative_error);
 
     // Compute output velocity
-    Scalar output =
-        proportional_error_contribution + integral_error_contribution + derivate_error_contribution;
+    output_ = proportional_error_contribution_ + integral_error_contribution_ +
+              derivate_error_contribution_;
 
     if (saturation_flag_) {
-      output = saturate_output(output, upper_output_saturation_, lower_output_saturation_);
+      output_ = saturate_output(output_, upper_output_saturation_, lower_output_saturation_);
     }
-    return output;
+
+    // Update last proportional error
+    proportional_error_ = proportional_error;
+    derivative_error_   = derivative_error;
+    return output_;
   }
 
   /**
@@ -465,6 +479,50 @@ public:
    */
   inline bool get_output_saturation_flag() const { return saturation_flag_; }
 
+  /**
+   * @brief Get the proportional error
+   *
+   * @return Scalar Proportional error
+   */
+  inline Scalar get_proportional_error() const { return proportional_error_; }
+
+  /**
+   * @brief Get the derivative error
+   *
+   * @return Scalar Derivative error
+   */
+  inline Scalar get_derivative_error() const { return derivative_error_; }
+
+  /**
+   * @brief Get the proportional error contribution
+   *
+   * @return Scalar Proportional error contribution
+   */
+  inline Scalar get_proportional_error_contribution() const {
+    return proportional_error_contribution_;
+  }
+
+  /**
+   * @brief Get the integral error contribution
+   *
+   * @return Scalar Integral error contribution
+   */
+  inline Scalar get_integral_error_contribution() const { return integral_error_contribution_; }
+
+  /**
+   * @brief Get the derivative error contribution
+   *
+   * @return Scalar Derivative error contribution
+   */
+  inline Scalar get_derivative_error_contribution() const { return derivate_error_contribution_; }
+
+  /**
+   * @brief Get the output
+   *
+   * @return Scalar Output
+   */
+  inline Scalar get_output() const { return output_; }
+
 protected:
   /**
    * @brief Compute the integral contribution of the controller
@@ -509,8 +567,7 @@ protected:
                                                      const Scalar proportional_error) {
     // Compute the derivative contribution of the error filtered with a first
     // order filter
-    Scalar derivate_proportional_error_increment =
-        (proportional_error - last_proportional_error_) / dt;
+    Scalar derivate_proportional_error_increment = (proportional_error - proportional_error_) / dt;
 
     filtered_derivate_error_ =
         alpha_ * derivate_proportional_error_increment + (1.0 - alpha_) * filtered_derivate_error_;
