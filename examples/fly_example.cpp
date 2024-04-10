@@ -139,7 +139,7 @@ public:
     add_double(time);
 
     // State ground truth
-    const state::State<double, 4> state = simulator.get_dynamics_const().get_state_const();
+    const state::State<double, 4> state = simulator.get_dynamics_const().get_state();
     std::ostringstream state_stream;
     state_stream << state;
     std::string state_string = state_stream.str();
@@ -158,13 +158,12 @@ public:
                        .get_indi_controller_const()
                        .get_desired_angular_acceleration_const());  // Angular acceleration
     // Force reference compensated with the gravity and in earth frame
-    Eigen::Vector3d force_ref =
-        simulator.get_dynamics_const().get_state_const().kinematics.orientation *
-            simulator.get_controller_const()
-                .get_indi_controller_const()
-                .get_desired_thrust_const() +
-        simulator.get_dynamics_const().get_model_const().get_gravity() *
-            simulator.get_dynamics_const().get_model_const().get_mass();
+    Eigen::Vector3d force_ref = simulator.get_dynamics_const().get_state().kinematics.orientation *
+                                    simulator.get_controller_const()
+                                        .get_indi_controller_const()
+                                        .get_desired_thrust_const() +
+                                simulator.get_dynamics_const().get_model_const().get_gravity() *
+                                    simulator.get_dynamics_const().get_model_const().get_mass();
     add_vector_row(force_ref);  // Force
     add_vector_row(simulator.get_controller_const()
                        .get_indi_controller_const()

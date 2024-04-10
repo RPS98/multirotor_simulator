@@ -117,12 +117,12 @@ public:
     return desired_linear_velocity;
   }
 
-  /**
-   * @brief Update PID parameters
-   *
-   * @param pid_params PID parameters
-   */
-  inline void update_pid_params(const PIDParams &params) { PID::update_params(params); }
+  // /**
+  //  * @brief Update PID parameters
+  //  *
+  //  * @param pid_params PID parameters
+  //  */
+  // inline void update_pid_params(const PIDParams &params) { this->update_params(params); }
 
   /**
    * @brief Update controller parameters
@@ -130,7 +130,7 @@ public:
    * @param params PositionControllerParams
    */
   void update_params(const PositionControllerParams<P> &params) {
-    PID::update_params(params.pid_params);
+    this->update_pid_params(params.pid_params);
   }
 
   // Getters
@@ -140,14 +140,14 @@ public:
    *
    * @return Vector3 Desired linear velocity (m/s)
    */
-  inline Vector3 get_desired_linear_velocity() const { return PID::get_output(); }
+  inline const Vector3 &get_desired_linear_velocity() const { return this->get_output(); }
 
   /**
    * @brief Get the desired position error
    *
    * @return Vector3 Desired position error (m)
    */
-  inline Vector3 get_position_error() const { return PID::get_proportional_error(); }
+  inline const Vector3 &get_position_error() const { return this->get_proportional_error(); }
 };  // Class PositionController
 
 }  // namespace position_controller

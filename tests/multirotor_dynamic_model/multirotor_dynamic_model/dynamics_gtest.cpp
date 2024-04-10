@@ -134,7 +134,6 @@ TEST(Dynamics, public_methods) {
 
   // Getters
   EXPECT_NO_THROW(dynamics.get_state());
-  EXPECT_NO_THROW(dynamics.get_state_const());
   EXPECT_NO_THROW(dynamics.get_model());
   EXPECT_NO_THROW(dynamics.get_model_const());
 

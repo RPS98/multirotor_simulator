@@ -209,35 +209,28 @@ public:
    *
    * @param state State of the aircraft
    */
-  void get_state(State &state) const { state = state_; }
-
-  /**
-   * @brief Get the state object
-   *
-   * @return State State of the aircraft
-   */
-  State get_state() const { return state_; }
+  inline void get_state(State &state) const { state = state_; }
 
   /**
    * @brief Get the state object (const version)
    *
    * @return const State& State of the aircraft
    */
-  const State &get_state_const() const { return state_; }
+  inline const State &get_state() const { return state_; }
 
   /**
    * @brief Get the model object
    *
    * @param model Model of the aircraft
    */
-  void get_model(Model &model) const { model = model_; }
+  inline void get_model(Model &model) const { model = model_; }
 
   /**
    * @brief Get the model object
    *
    * @return Model Model of the aircraft
    */
-  Model get_model() const { return model_; }
+  inline Model &get_model() { return model_; }
 
   /**
    * @brief Get the model object (const version)

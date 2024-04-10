@@ -151,7 +151,7 @@ TEST(SimulatorFly, floor_collision_motor_w) {
     simulator.update_inertial_odometry(dt);
   }
   double epsilon = 0.0001;
-  EXPECT_NEAR(simulator.get_state_const().kinematics.position.z(), 0.0, epsilon);
+  EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
 }
 
 TEST(SimulatorFly, floor_collision_trajectory) {
@@ -169,7 +169,7 @@ TEST(SimulatorFly, floor_collision_trajectory) {
     simulator.update_inertial_odometry(dt);
   }
   double epsilon = 0.0001;
-  EXPECT_NEAR(simulator.get_state_const().kinematics.position.z(), 0.0, epsilon);
+  EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
 }
 
 TEST(SimulatorFly, floor_collision_velocity) {
@@ -187,7 +187,7 @@ TEST(SimulatorFly, floor_collision_velocity) {
     simulator.update_inertial_odometry(dt);
   }
   double epsilon = 0.0001;
-  EXPECT_NEAR(simulator.get_state_const().kinematics.position.z(), 0.0, epsilon);
+  EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
 }
 
 TEST(SimulatorFly, floor_collision_position) {
@@ -205,7 +205,7 @@ TEST(SimulatorFly, floor_collision_position) {
     simulator.update_inertial_odometry(dt);
   }
   double epsilon = 0.0001;
-  EXPECT_NEAR(simulator.get_state_const().kinematics.position.z(), 0.0, epsilon);
+  EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
 }
 
 }  // namespace multirotor

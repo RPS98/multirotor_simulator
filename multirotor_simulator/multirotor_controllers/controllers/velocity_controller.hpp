@@ -118,19 +118,12 @@ public:
   }
 
   /**
-   * @brief Update PID parameters
-   *
-   * @param pid_params PID parameters
-   */
-  inline void update_pid_params(const PIDParams &params) { PID::update_params(params); }
-
-  /**
    * @brief Update controller parameters
    *
    * @param params VelocityControllerParams
    */
   inline void update_params(const VelocityControllerParams<P> &params) {
-    PID::update_params(params.pid_params);
+    this->update_pid_params(params.pid_params);
   }
 
   // Getters
@@ -140,14 +133,14 @@ public:
    *
    * @return Vector3 Desired linear acceleration (m/s)
    */
-  inline Vector3 get_desired_linear_acceleration() const { return PID::get_output(); }
+  inline const Vector3 &get_desired_linear_acceleration() const { return this->get_output(); }
 
   /**
    * @brief Get the desired velocity error
    *
    * @return Vector3 Desired velocity error (m)
    */
-  inline Vector3 get_velocity_error() const { return PID::get_proportional_error(); }
+  inline const Vector3 &get_velocity_error() const { return this->get_proportional_error(); }
 };  // Class VelocityController
 
 }  // namespace velocity_controller

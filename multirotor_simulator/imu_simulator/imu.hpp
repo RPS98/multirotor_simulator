@@ -233,17 +233,10 @@ public:
   /**
    * @brief Return the IMU measurement.
    *
-   * @return std::pair<Vector3, Vector3> Gyroscope and accelerometer measurement in body frame.
-   */
-  std::pair<Vector3, Vector3> get_measurement() const { return std::make_pair(gyro_, accel_); }
-
-  /**
-   * @brief Return the IMU measurement.
-   *
    * @return const std::pair<Vector3, Vector3>& Gyroscope and accelerometer measurement in body
    * frame.
    */
-  const std::pair<Vector3, Vector3>& get_measurement_const() const {
+  inline const std::pair<Vector3, Vector3>& get_measurement() const {
     return std::make_pair(gyro_, accel_);
   }
 
@@ -252,21 +245,14 @@ public:
    *
    * @param gyro Output gyroscope measurement in body frame.
    */
-  void get_measurement_gyro(Vector3& gyro) const { gyro = gyro_; }
-
-  /**
-   * @brief Get the measurement gyro in body frame.
-   *
-   * @return Vector3 Gyroscope measurement in body frame.
-   */
-  Vector3 get_measurement_gyro() const { return gyro_; }
+  inline void get_measurement_gyro(Vector3& gyro) const { gyro = gyro_; }
 
   /**
    * @brief Get the measurement gyro in body frame (const).
    *
    * @return const Vector3& Gyroscope measurement in body frame.
    */
-  const Vector3& get_measurement_gyro_const() const { return gyro_; }
+  inline const Vector3& get_measurement_gyro() const { return gyro_; }
 
   /**
    * @brief Get the measurement accel
@@ -276,18 +262,11 @@ public:
   void get_measurement_accel(Vector3& accel) const { accel = accel_; }
 
   /**
-   * @brief Get the measurement accel in body frame.
-   *
-   * @return Vector3 Accelerometer measurement in body frame.
-   */
-  Vector3 get_measurement_accel() const { return accel_; }
-
-  /**
    * @brief Get the measurement accel in body frame (const).
    *
    * @return const Vector3& Accelerometer measurement in body frame.
    */
-  const Vector3& get_measurement_accel_const() const { return accel_; }
+  const Vector3& get_measurement_accel() const { return accel_; }
 
   /**
    * @brief Get IMU bias.

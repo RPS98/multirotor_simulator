@@ -194,18 +194,9 @@ public:
   /**
    * @brief Get the desired angular velocity
    *
-   * @return Vector3 Desired angular velocity (rad/s)
-   */
-  inline Vector3 get_desired_angular_velocity() const { return vehicle_angular_velocity_; }
-
-  /**
-   * @brief Get the desired angular velocity
-   *
    * @return constVector3& Desired angular velocity (rad/s)
    */
-  inline const Vector3& get_desired_angular_velocity_const() const {
-    return vehicle_angular_velocity_;
-  }
+  inline const Vector3& get_desired_angular_velocity() const { return vehicle_angular_velocity_; }
 
   /**
    * @brief Get the desired thrust

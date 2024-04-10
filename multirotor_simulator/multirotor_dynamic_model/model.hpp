@@ -327,9 +327,9 @@ public:
    *
    * Get a copy of the model parameters
    *
-   * @return ModelParamsP
+   * @return const ModelParamsP&
    */
-  inline ModelParamsP get_params() const { return params_; }
+  inline const ModelParamsP &get_params() const { return params_; }
 
   /**
    * @brief Get the motors
@@ -338,7 +338,7 @@ public:
    *
    * @return std::vector<MotorParamsP>
    */
-  inline std::vector<MotorParamsP> get_motors() const { return params_.motors_params; }
+  inline const std::vector<MotorParamsP> &get_motors() const { return params_.motors_params; }
 
   /**
    * @brief Get the num rotors
@@ -365,7 +365,7 @@ public:
    *
    * @return Matrix3 Vehicle inertia (kg · m^2)
    */
-  inline Matrix3 get_vehicle_inertia() const { return params_.vehicle_inertia; }
+  inline const Matrix3 &get_vehicle_inertia() const { return params_.vehicle_inertia; }
 
   /**
    * @brief Get the vehicle drag coefficient
@@ -383,7 +383,7 @@ public:
    *
    * @return Matrix3 Vehicle aero moment coefficient
    */
-  inline Matrix3 get_vehicle_aero_moment_coefficient() const {
+  inline const Matrix3 &get_vehicle_aero_moment_coefficient() const {
     return params_.vehicle_aero_moment_coefficient;
   }
 
@@ -394,7 +394,7 @@ public:
    *
    * @return Vector3 Gravity vector (m/s^2)
    */
-  inline Vector3 get_gravity() const { return params_.gravity; }
+  inline const Vector3 &get_gravity() const { return params_.gravity; }
 
   /**
    * @brief Get the moment process noise auto correlation
@@ -425,7 +425,7 @@ public:
    *
    * @return Vector3 Stochastic force (N)
    */
-  inline Vector3 get_stochastic_force() const { return stochastic_force_; }
+  inline const Vector3 &get_stochastic_force() const { return stochastic_force_; }
 
   /**
    * @brief Get the stoch moment
@@ -434,7 +434,7 @@ public:
    *
    * @return Vector3 Stochastic moment (N · m)
    */
-  inline Vector3 get_stochastic_moment() const { return stochastic_moment_; }
+  inline const Vector3 &get_stochastic_moment() const { return stochastic_moment_; }
 
   /**
    * @brief Get the mixer torque matrix
@@ -443,7 +443,7 @@ public:
    *
    * @return Matrix3N Mixer torque matrix
    */
-  inline Matrix3N get_mixer_torque_matrix() const { return mixer_torque_matrix_; }
+  inline const Matrix3N &get_mixer_torque_matrix() const { return mixer_torque_matrix_; }
 
   /**
    * @brief Get the mixer force vector
@@ -452,7 +452,7 @@ public:
    *
    * @return VectorN Mixer force vector
    */
-  inline VectorN get_mixer_force_vector() const { return mixer_force_vector_; }
+  inline const VectorN &get_mixer_force_vector() const { return mixer_force_vector_; }
 
   /**
    * @brief Get the mixer force matrix
@@ -461,7 +461,7 @@ public:
    *
    * @return Matrix3N Mixer force matrix
    */
-  inline Matrix3N get_mixer_force_matrix() const { return mixer_force_matrix_; }
+  inline const Matrix3N &get_mixer_force_matrix() const { return mixer_force_matrix_; }
 
   /**
    * @brief Get the mixer inertia matrix
@@ -470,7 +470,7 @@ public:
    *
    * @return Matrix3N Mixer inertia matrix
    */
-  inline Matrix3N get_mixer_inertia_matrix() const { return mixer_inertia_matrix_; }
+  inline const Matrix3N &get_mixer_inertia_matrix() const { return mixer_inertia_matrix_; }
 
   /**
    * @brief Get the mixer matrix
@@ -479,7 +479,7 @@ public:
    *
    * @return MatrixN6 Mixer matrix
    */
-  inline MatrixN6 get_mixer_matrix() const { return mixer_matrix_; }
+  inline const MatrixN6 &get_mixer_matrix() const { return mixer_matrix_; }
 
 public:
   // Static functions

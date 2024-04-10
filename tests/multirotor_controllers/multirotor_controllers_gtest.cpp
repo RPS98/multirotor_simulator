@@ -146,6 +146,25 @@ TEST(Controller, public_methods) {
       multirotor_controller.update_trajectory_controller_params(trajectory_controller_params));
   EXPECT_NO_THROW(
       multirotor_controller.update_velocity_controller_params(velocity_controller_params));
+
+  // Getters
+  EXPECT_NO_THROW(multirotor_controller.get_acro_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_acro_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_indi_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_indi_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_position_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_position_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_trajectory_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_trajectory_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_velocity_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_velocity_controller_const());
+
+  EXPECT_NO_THROW(multirotor_controller.get_desired_motor_angular_velocity());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_thrust());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_angular_velocity());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_linear_acceleration());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_linear_velocity());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_position());
 }
 
 TEST(Controller, compute_acro_control) {

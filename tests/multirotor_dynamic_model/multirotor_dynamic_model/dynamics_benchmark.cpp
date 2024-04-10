@@ -119,7 +119,7 @@ static void BM_TEST_GET_STATE(benchmark::State &bm_state) {
 }
 BENCHMARK(BM_TEST_GET_STATE)->Threads(1)->Repetitions(10);
 
-static void BM_TEST_GET_STATE_CONST(benchmark::State &bm_state) {
+static void BM_TEST_get_state(benchmark::State &bm_state) {
   // Perform setup here
   Model<double, 4> model = get_model();
   State<double, 4> state = State<double, 4>();
@@ -137,6 +137,6 @@ static void BM_TEST_GET_STATE_CONST(benchmark::State &bm_state) {
     const State<double, 4> output_state = dynamics.get_state();
   }
 }
-BENCHMARK(BM_TEST_GET_STATE_CONST)->Threads(1)->Repetitions(10);
+BENCHMARK(BM_TEST_get_state)->Threads(1)->Repetitions(10);
 
 BENCHMARK_MAIN();

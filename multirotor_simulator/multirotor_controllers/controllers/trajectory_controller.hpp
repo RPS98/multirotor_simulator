@@ -128,19 +128,12 @@ public:
   }
 
   /**
-   * @brief Update PID parameters
-   *
-   * @param pid_params PID parameters
-   */
-  inline void update_pid_params(const PIDParams& pid_params) { PID::update_params(pid_params); }
-
-  /**
    * @brief Update controller parameters
    *
    * @param params TrajectoryControllerParams
    */
   inline void update_params(const TrajectoryControllerParams<P>& params) {
-    PID::update_params(params.pid_params);
+    this->update_pid_params(params.pid_params);
   }
 
   // Getters
@@ -150,21 +143,21 @@ public:
    *
    * @return Vector3 Desired linear acceleration (m/s^2)
    */
-  inline Vector3 get_desired_linear_acceleration() const { return PID::get_output(); }
+  inline const Vector3& get_desired_linear_acceleration() const { return this->get_output(); }
 
   /**
    * @brief Get the position error
    *
    * @return Vector3 Position error (m)
    */
-  inline Vector3 get_position_error() const { return PID::get_proportional_error(); }
+  inline const Vector3& get_position_error() const { return this->get_proportional_error(); }
 
   /**
    * @brief Get the velocity error
    *
    * @return Vector3 Velocity error (m/s)
    */
-  inline Vector3 get_velocity_error() const { return PID::get_derivative_error(); }
+  inline const Vector3& get_velocity_error() const { return this->get_derivative_error(); }
 };
 }  // namespace trajectory_controller
 

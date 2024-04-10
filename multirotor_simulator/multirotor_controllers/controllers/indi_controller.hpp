@@ -198,7 +198,7 @@ public:
    *
    * @param pid_params PID parameters
    */
-  inline void update_pid_params(const PIDParams &pid_params) { pid_.update_params(pid_params); }
+  inline void update_pid_params(const PIDParams &pid_params) { pid_.update_pid_params(pid_params); }
 
   /**
    * @brief Update controller parameters

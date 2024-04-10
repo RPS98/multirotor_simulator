@@ -144,7 +144,7 @@ public:
     add_double(time);
 
     // State ground truth
-    const state::State<double, 4> state = simulator.get_dynamics_const().get_state_const();
+    const state::State<double, 4> state = simulator.get_dynamics_const().get_state();
     std::ostringstream state_stream;
     state_stream << state;
     std::string state_string = state_stream.str();
@@ -163,13 +163,12 @@ public:
                        .get_indi_controller_const()
                        .get_desired_angular_acceleration_const());  // Angular acceleration
     // Force reference compensated with the gravity and in earth frame
-    Eigen::Vector3d force_ref =
-        simulator.get_dynamics_const().get_state_const().kinematics.orientation *
-            simulator.get_controller_const()
-                .get_indi_controller_const()
-                .get_desired_thrust_const() +
-        simulator.get_dynamics_const().get_model_const().get_gravity() *
-            simulator.get_dynamics_const().get_model_const().get_mass();
+    Eigen::Vector3d force_ref = simulator.get_dynamics_const().get_state().kinematics.orientation *
+                                    simulator.get_controller_const()
+                                        .get_indi_controller_const()
+                                        .get_desired_thrust_const() +
+                                simulator.get_dynamics_const().get_model_const().get_gravity() *
+                                    simulator.get_dynamics_const().get_model_const().get_mass();
     add_vector_row(force_ref);  // Force
     add_vector_row(simulator.get_controller_const()
                        .get_indi_controller_const()
@@ -664,19 +663,19 @@ void test_geometric_controller(CsvLogger& logger,
   simulator.set_control_mode(ControlMode::TRAJECTORY);
 
   // Initialize dynamic trajectory generator
-  std::unique_ptr<DynamicTrajectory> trajectory_generator = get_trajectory_generator(
-      simulator.get_dynamics_const().get_state_const().kinematics.position);
+  std::unique_ptr<DynamicTrajectory> trajectory_generator =
+      get_trajectory_generator(simulator.get_dynamics_const().get_state().kinematics.position);
   double max_time = trajectory_generator->getMaxTime();
 
   // Initialize reference trajectory
   dynamic_traj_generator::References references;
-  references.position = simulator.get_dynamics_const().get_state_const().kinematics.position;
-  references.velocity = simulator.get_dynamics_const().get_state_const().kinematics.linear_velocity;
+  references.position = simulator.get_dynamics_const().get_state().kinematics.position;
+  references.velocity = simulator.get_dynamics_const().get_state().kinematics.linear_velocity;
   references.acceleration =
-      simulator.get_dynamics_const().get_state_const().kinematics.linear_acceleration;
+      simulator.get_dynamics_const().get_state().kinematics.linear_acceleration;
   double roll_ref, pitch_ref, yaw_ref;
-  quaternion_to_Euler(simulator.get_dynamics_const().get_state_const().kinematics.orientation,
-                      roll_ref, pitch_ref, yaw_ref);
+  quaternion_to_Euler(simulator.get_dynamics_const().get_state().kinematics.orientation, roll_ref,
+                      pitch_ref, yaw_ref);
 
   simulator.set_reference_trajectory(references.position, references.velocity,
                                      references.acceleration, yaw_ref);
@@ -708,8 +707,7 @@ void test_trajectory_controller_with_takeoff(CsvLogger& logger,
   simulator.set_control_mode(ControlMode::TRAJECTORY);
 
   // Initialize dynamic trajectory generator for takeoff
-  Eigen::Vector3d initial_position =
-      simulator.get_dynamics_const().get_state_const().kinematics.position;
+  Eigen::Vector3d initial_position = simulator.get_dynamics_const().get_state().kinematics.position;
   Eigen::Vector3d takeoff_position = initial_position + Eigen::Vector3d(0.0, 0.0, 3.0);
   std::unique_ptr<DynamicTrajectory> trajectory_generator_takeoff =
       get_trajectory_generator(initial_position, {takeoff_position}, 1.0);
@@ -722,13 +720,13 @@ void test_trajectory_controller_with_takeoff(CsvLogger& logger,
 
   // Initialize reference trajectory
   dynamic_traj_generator::References references;
-  references.position = simulator.get_dynamics_const().get_state_const().kinematics.position;
-  references.velocity = simulator.get_dynamics_const().get_state_const().kinematics.linear_velocity;
+  references.position = simulator.get_dynamics_const().get_state().kinematics.position;
+  references.velocity = simulator.get_dynamics_const().get_state().kinematics.linear_velocity;
   references.acceleration =
-      simulator.get_dynamics_const().get_state_const().kinematics.linear_acceleration;
+      simulator.get_dynamics_const().get_state().kinematics.linear_acceleration;
   double roll_ref, pitch_ref, yaw_ref;
-  quaternion_to_Euler(simulator.get_dynamics_const().get_state_const().kinematics.orientation,
-                      roll_ref, pitch_ref, yaw_ref);
+  quaternion_to_Euler(simulator.get_dynamics_const().get_state().kinematics.orientation, roll_ref,
+                      pitch_ref, yaw_ref);
 
   simulator.set_reference_trajectory(references.position, references.velocity,
                                      references.acceleration, yaw_ref);
