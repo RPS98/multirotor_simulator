@@ -131,14 +131,14 @@ public:
   /**
    * @brief Get the desired linear acceleration
    *
-   * @return Vector3 Desired linear acceleration (m/s)
+   * @return Vector3& Desired linear acceleration (m/s)
    */
   inline const Vector3 &get_desired_linear_acceleration() const { return this->get_output(); }
 
   /**
-   * @brief Get the desired velocity error
+   * @brief Get the velocity error
    *
-   * @return Vector3 Desired velocity error (m)
+   * @return Vector3& Velocity error (m)
    */
   inline const Vector3 &get_velocity_error() const { return this->get_proportional_error(); }
 };  // Class VelocityController

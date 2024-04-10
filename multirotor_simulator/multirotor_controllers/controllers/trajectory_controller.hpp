@@ -141,21 +141,21 @@ public:
   /**
    * @brief Get the desired linear acceleration
    *
-   * @return Vector3 Desired linear acceleration (m/s^2)
+   * @return Vector3& Desired linear acceleration (m/s^2)
    */
   inline const Vector3& get_desired_linear_acceleration() const { return this->get_output(); }
 
   /**
    * @brief Get the position error
    *
-   * @return Vector3 Position error (m)
+   * @return Vector3& Position error (m)
    */
   inline const Vector3& get_position_error() const { return this->get_proportional_error(); }
 
   /**
    * @brief Get the velocity error
    *
-   * @return Vector3 Velocity error (m/s)
+   * @return Vector3& Velocity error (m/s)
    */
   inline const Vector3& get_velocity_error() const { return this->get_derivative_error(); }
 };

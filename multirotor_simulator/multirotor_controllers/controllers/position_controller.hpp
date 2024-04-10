@@ -138,14 +138,14 @@ public:
   /**
    * @brief Get the desired linear velocity
    *
-   * @return Vector3 Desired linear velocity (m/s)
+   * @return Vector3& Desired linear velocity (m/s)
    */
   inline const Vector3 &get_desired_linear_velocity() const { return this->get_output(); }
 
   /**
-   * @brief Get the desired position error
+   * @brief Get the position error
    *
-   * @return Vector3 Desired position error (m)
+   * @return Vector3& Position error (m)s
    */
   inline const Vector3 &get_position_error() const { return this->get_proportional_error(); }
 };  // Class PositionController
