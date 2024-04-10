@@ -92,7 +92,7 @@ public:
   explicit PID(const PIDParams<P, dim> &pid_params = PIDParams<P, dim>(),
                const bool &verbose                 = false)
       : verbose_(verbose) {
-    update_params(pid_params);
+    update_pid_params(pid_params);
     reset_controller();
   }
 
@@ -138,7 +138,7 @@ public:
    *
    * @param params PIDParams struct
    */
-  void update_params(const PIDParams<P, dim> &params) {
+  void update_pid_params(const PIDParams<P, dim> &params) {
     set_gains(params.Kp_gains, params.Ki_gains, params.Kd_gains);
     set_anti_windup(params.antiwindup_cte);
     set_alpha(params.alpha);
@@ -574,21 +574,21 @@ public:
    *
    * @return Vector Proportional error
    */
-  inline Vector get_proportional_error() const { return proportional_error_; }
+  inline const Vector &get_proportional_error() const { return proportional_error_; }
 
   /**
    * @brief Get the derivative error
    *
    * @return Vector Derivative error
    */
-  inline Vector get_derivative_error() const { return derivative_error_; }
+  inline const Vector &get_derivative_error() const { return derivative_error_; }
 
   /**
    * @brief Get the proportional error contribution
    *
    * @return Vector Proportional error contribution
    */
-  inline Vector get_proportional_error_contribution() const {
+  inline const Vector &get_proportional_error_contribution() const {
     return proportional_error_contribution_;
   }
 
@@ -597,21 +597,25 @@ public:
    *
    * @return Vector Integral error contribution
    */
-  inline Vector get_integral_error_contribution() const { return integral_error_contribution_; }
+  inline const Vector &get_integral_error_contribution() const {
+    return integral_error_contribution_;
+  }
 
   /**
    * @brief Get the derivative error contribution
    *
    * @return Vector Derivative error contribution
    */
-  inline Vector get_derivative_error_contribution() const { return derivate_error_contribution_; }
+  inline const Vector &get_derivative_error_contribution() const {
+    return derivate_error_contribution_;
+  }
 
   /**
    * @brief Get the output
    *
    * @return Vector Output
    */
-  inline Vector get_output() const { return output_; }
+  inline const Vector &get_output() const { return output_; }
 
 protected:
   /**
