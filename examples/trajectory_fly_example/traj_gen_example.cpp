@@ -152,30 +152,28 @@ public:
 
     // References
     // Reference trajectory generator
-    add_vector_row(simulator.get_reference_position_const());  // Position
-    add_double(simulator.get_reference_yaw());                 // Yaw
-    add_vector_row(simulator.get_reference_velocity_const());  // Velocity
+    add_vector_row(simulator.get_reference_position());  // Position
+    add_double(simulator.get_reference_yaw());           // Yaw
+    add_vector_row(simulator.get_reference_velocity());  // Velocity
     // Reference multirotor_controller
-    add_vector_row(simulator.get_controller_const()
-                       .get_desired_vehicle_angular_velocity_const());  // Angular velocity
-    add_vector_row(simulator.get_reference_acceleration_const());       // Linear acceleration
+    add_vector_row(
+        simulator.get_controller_const().get_desired_angular_velocity());  // Angular velocity
+    add_vector_row(simulator.get_reference_acceleration());                // Linear acceleration
     add_vector_row(simulator.get_controller_const()
                        .get_indi_controller_const()
-                       .get_desired_angular_acceleration_const());  // Angular acceleration
+                       .get_desired_angular_acceleration());  // Angular acceleration
     // Force reference compensated with the gravity and in earth frame
-    Eigen::Vector3d force_ref = simulator.get_dynamics_const().get_state().kinematics.orientation *
-                                    simulator.get_controller_const()
-                                        .get_indi_controller_const()
-                                        .get_desired_thrust_const() +
-                                simulator.get_dynamics_const().get_model_const().get_gravity() *
-                                    simulator.get_dynamics_const().get_model_const().get_mass();
+    Eigen::Vector3d force_ref =
+        simulator.get_dynamics_const().get_state().kinematics.orientation *
+            simulator.get_controller_const().get_indi_controller_const().get_desired_thrust() +
+        simulator.get_dynamics_const().get_model_const().get_gravity() *
+            simulator.get_dynamics_const().get_model_const().get_mass();
     add_vector_row(force_ref);  // Force
     add_vector_row(simulator.get_controller_const()
                        .get_indi_controller_const()
-                       .get_desired_torque_const());  // Torque
+                       .get_desired_torque());  // Torque
 
-    add_vector_row(
-        simulator.get_actuation_motors_angular_velocity_const());  // Motor angular velocity
+    add_vector_row(simulator.get_actuation_motors_angular_velocity());  // Motor angular velocity
 
     // State inertial odometry
     std::ostringstream io_stream;
@@ -678,7 +676,8 @@ void test_geometric_controller(CsvLogger& logger,
                       pitch_ref, yaw_ref);
 
   simulator.set_reference_trajectory(references.position, references.velocity,
-                                     references.acceleration, yaw_ref);
+                                     references.acceleration);
+  simulator.set_reference_yaw_angle(yaw_ref);
 
   // Simulation
   double t = 0.0;  // seconds
@@ -687,7 +686,8 @@ void test_geometric_controller(CsvLogger& logger,
     if (t < max_time) {
       trajectory_generator->evaluateTrajectory(t, references);
       simulator.set_reference_trajectory(references.position, references.velocity,
-                                         references.acceleration, yaw_ref);
+                                         references.acceleration);
+      simulator.set_reference_yaw_angle(yaw_ref);
     }
     simulator.update_controller(dt);
     simulator.update_dynamics(dt);
@@ -729,7 +729,8 @@ void test_trajectory_controller_with_takeoff(CsvLogger& logger,
                       pitch_ref, yaw_ref);
 
   simulator.set_reference_trajectory(references.position, references.velocity,
-                                     references.acceleration, yaw_ref);
+                                     references.acceleration);
+  simulator.set_reference_yaw_angle(yaw_ref);
 
   // Simulation
   double t = 0.0;  // seconds
@@ -738,11 +739,13 @@ void test_trajectory_controller_with_takeoff(CsvLogger& logger,
     if (t < max_time_takeoff) {
       trajectory_generator_takeoff->evaluateTrajectory(t, references);
       simulator.set_reference_trajectory(references.position, references.velocity,
-                                         references.acceleration, yaw_ref);
+                                         references.acceleration);
+      simulator.set_reference_yaw_angle(yaw_ref);
     } else if (t >= max_time_takeoff && t < max_time_takeoff + max_time) {
       trajectory_generator->evaluateTrajectory(t - max_time_takeoff, references);
       simulator.set_reference_trajectory(references.position, references.velocity,
-                                         references.acceleration, 0.0);
+                                         references.acceleration);
+      simulator.set_reference_yaw_angle(0.0);
     }
     simulator.update_controller(dt);
     simulator.update_dynamics(dt);

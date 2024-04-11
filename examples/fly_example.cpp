@@ -147,30 +147,28 @@ public:
 
     // References
     // Reference trajectory generator
-    add_vector_row(simulator.get_reference_position_const());  // Position
-    add_double(simulator.get_reference_yaw());                 // Yaw
-    add_vector_row(simulator.get_reference_velocity_const());  // Velocity
+    add_vector_row(simulator.get_reference_position());  // Position
+    add_double(simulator.get_reference_yaw());           // Yaw
+    add_vector_row(simulator.get_reference_velocity());  // Velocity
     // Reference multirotor_controller
-    add_vector_row(simulator.get_controller_const()
-                       .get_desired_vehicle_angular_velocity_const());  // Angular velocity
-    add_vector_row(simulator.get_reference_acceleration_const());       // Linear acceleration
+    add_vector_row(
+        simulator.get_controller_const().get_desired_angular_velocity());  // Angular velocity
+    add_vector_row(simulator.get_reference_acceleration());                // Linear acceleration
     add_vector_row(simulator.get_controller_const()
                        .get_indi_controller_const()
-                       .get_desired_angular_acceleration_const());  // Angular acceleration
+                       .get_desired_angular_acceleration());  // Angular acceleration
     // Force reference compensated with the gravity and in earth frame
-    Eigen::Vector3d force_ref = simulator.get_dynamics_const().get_state().kinematics.orientation *
-                                    simulator.get_controller_const()
-                                        .get_indi_controller_const()
-                                        .get_desired_thrust_const() +
-                                simulator.get_dynamics_const().get_model_const().get_gravity() *
-                                    simulator.get_dynamics_const().get_model_const().get_mass();
+    Eigen::Vector3d force_ref =
+        simulator.get_dynamics_const().get_state().kinematics.orientation *
+            simulator.get_controller_const().get_indi_controller_const().get_desired_thrust() +
+        simulator.get_dynamics_const().get_model_const().get_gravity() *
+            simulator.get_dynamics_const().get_model_const().get_mass();
     add_vector_row(force_ref);  // Force
     add_vector_row(simulator.get_controller_const()
                        .get_indi_controller_const()
-                       .get_desired_torque_const());  // Torque
+                       .get_desired_torque());  // Torque
 
-    add_vector_row(
-        simulator.get_actuation_motors_angular_velocity_const());  // Motor angular velocity
+    add_vector_row(simulator.get_actuation_motors_angular_velocity());  // Motor angular velocity
 
     // State inertial odometry
     std::ostringstream io_stream;
@@ -535,6 +533,16 @@ std::vector<Eigen::Vector3d> get_references(
   return references;
 }
 
+double get_yaw_rate_reference(const std::string& file_path = SIM_CONFIG_PATH) {
+  double yaw_rate = 0.0;
+  // Read params
+  if (!check_file_exits(file_path)) {
+    return yaw_rate;
+  }
+  read_yaml_param("sim_config.yaw_rate_reference", yaw_rate, file_path);
+  return yaw_rate;
+}
+
 Simulator<double, 4> get_simulator() {
   SimulatorParams simulator_params = get_simulation_params();
   Simulator simulator              = Simulator(simulator_params);
@@ -618,7 +626,8 @@ void test_velocity_controller(CsvLogger& logger,
   // Get velocity references
   std::vector<Eigen::Vector3d> references = get_references();
   int reference_index                     = 0;
-  simulator.set_reference_velocity(references[reference_index], 0.0);
+  simulator.set_reference_velocity(references[reference_index]);
+  simulator.set_reference_yaw_angle(0.0);
 
   // Simulation
   double t                       = 0.0;  // seconds
@@ -634,7 +643,7 @@ void test_velocity_controller(CsvLogger& logger,
     if (reference_time > time_between_references) {
       reference_time = 0.0;
       reference_index++;
-      simulator.set_reference_velocity(references[reference_index], 0.0);
+      simulator.set_reference_velocity(references[reference_index]);
     }
     logger.save(t, simulator);
     t += dt;
@@ -653,7 +662,8 @@ void test_position_controller(CsvLogger& logger,
   // Get position references
   std::vector<Eigen::Vector3d> references = get_references(SIM_CONFIG_PATH, "position_references");
   int reference_index                     = 0;
-  simulator.set_reference_position(references[reference_index], 0.0);
+  simulator.set_reference_position(references[reference_index]);
+  simulator.set_reference_yaw_angle(0.0);
 
   // Simulation
   double t                       = 0.0;  // seconds
@@ -669,7 +679,45 @@ void test_position_controller(CsvLogger& logger,
     if (reference_time > time_between_references) {
       reference_time = 0.0;
       reference_index++;
-      simulator.set_reference_position(references[reference_index], 0.0);
+      simulator.set_reference_position(references[reference_index]);
+    }
+    logger.save(t, simulator);
+    t += dt;
+    reference_time += dt;
+  }
+  logger.close();
+}
+
+void test_position_controller_yaw_rate(CsvLogger& logger,
+                                       Simulator<double, 4>& simulator,
+                                       const double sim_max_t,
+                                       const double dt) {
+  // Set control mode
+  simulator.set_control_mode(ControlMode::POSITION, YawControlMode::RATE);
+
+  // Get position references
+  std::vector<Eigen::Vector3d> references = get_references(SIM_CONFIG_PATH, "position_references");
+  int reference_index                     = 0;
+  simulator.set_reference_position(references[reference_index]);
+  double yaw_rate = get_yaw_rate_reference(SIM_CONFIG_PATH);
+  simulator.set_reference_yaw_rate(yaw_rate);
+
+  // Simulation
+  double t                       = 0.0;  // seconds
+  double time_between_references = sim_max_t / references.size();
+  double reference_time          = 0.0;
+  logger.save(t, simulator);
+
+  while (t < sim_max_t) {
+    simulator.update_controller(dt);
+    simulator.update_dynamics(dt);
+    simulator.update_imu(dt);
+    simulator.update_inertial_odometry(dt);
+    if (reference_time > time_between_references) {
+      reference_time = 0.0;
+      reference_index++;
+      simulator.set_reference_position(references[reference_index]);
+      simulator.set_reference_yaw_rate(yaw_rate);
     }
     logger.save(t, simulator);
     t += dt;
@@ -701,5 +749,6 @@ int main(int argc, char** argv) {
   // test_indi_controller(logger, simulator, max_time, dt);
   // test_velocity_controller(logger, simulator, max_time, dt);
   test_position_controller(logger, simulator, max_time, dt);
+  // test_position_controller_yaw_rate(logger, simulator, max_time, dt);
   return 0;
 }

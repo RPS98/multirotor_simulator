@@ -70,6 +70,7 @@ TEST(Simulator, setters_references) {
   Simulator simulator = Simulator(simulator_params);
 
   EXPECT_NO_THROW(simulator.set_control_mode(ControlMode::ACRO));
+  EXPECT_NO_THROW(simulator.set_control_mode(ControlMode::POSITION, YawControlMode::RATE));
   Eigen::Vector4d reference_motors_angular_velocity = Eigen::Vector4d::Zero();
   EXPECT_NO_THROW(simulator.set_refence_motors_angular_velocity(reference_motors_angular_velocity));
   double reference_acro_thrust                    = 0.0;
@@ -79,9 +80,13 @@ TEST(Simulator, setters_references) {
   Eigen::Vector3d reference_position     = Eigen::Vector3d::Zero();
   Eigen::Vector3d reference_velocity     = Eigen::Vector3d::Zero();
   Eigen::Vector3d reference_acceleration = Eigen::Vector3d::Zero();
-  double reference_yaw                   = 0.0;
   EXPECT_NO_THROW(simulator.set_reference_trajectory(reference_position, reference_velocity,
-                                                     reference_acceleration, reference_yaw));
+                                                     reference_acceleration));
+  EXPECT_NO_THROW(simulator.set_reference_velocity(reference_velocity));
+  EXPECT_NO_THROW(simulator.set_reference_position(reference_position));
+  double reference_yaw = 0.0;
+  EXPECT_NO_THROW(simulator.set_reference_yaw_angle(reference_yaw));
+  EXPECT_NO_THROW(simulator.set_reference_yaw_rate(reference_yaw));
 }
 
 TEST(Simulator, getters) {
@@ -109,6 +114,43 @@ TEST(Simulator, getters) {
   EXPECT_NO_THROW(imu::InertialOdometry inertial_odometry_ = simulator.get_inertial_odometry());
   EXPECT_NO_THROW(const imu::InertialOdometry inertial_odometry_const =
                       simulator.get_inertial_odometry_const());
+
+  bool test_bool                       = false;
+  double test_d                        = 0.0;
+  Eigen::Vector4d test_vector4d        = Eigen::Vector4d::Zero();
+  Eigen::Vector3d test_vector3d        = Eigen::Vector3d::Zero();
+  ControlMode test_control_mode        = ControlMode::ACRO;
+  YawControlMode test_yaw_control_mode = YawControlMode::RATE;
+  EXPECT_NO_THROW(simulator.get_armed(test_bool));
+  EXPECT_NO_THROW(simulator.get_armed());
+  EXPECT_NO_THROW(simulator.get_floor_collision_enabled(test_bool));
+  EXPECT_NO_THROW(simulator.get_floor_collision_enabled());
+  EXPECT_NO_THROW(simulator.get_floor_height(test_d));
+  EXPECT_NO_THROW(simulator.get_floor_height());
+  EXPECT_NO_THROW(simulator.get_reference_motors_angular_velocity(test_vector4d));
+  EXPECT_NO_THROW(simulator.get_reference_motors_angular_velocity());
+  EXPECT_NO_THROW(simulator.get_reference_thrust(test_d));
+  EXPECT_NO_THROW(simulator.get_reference_thrust());
+  EXPECT_NO_THROW(simulator.get_reference_angular_velocity(test_vector3d));
+  EXPECT_NO_THROW(simulator.get_reference_angular_velocity());
+  EXPECT_NO_THROW(simulator.get_reference_position(test_vector3d));
+  EXPECT_NO_THROW(simulator.get_reference_position());
+  EXPECT_NO_THROW(simulator.get_reference_velocity(test_vector3d));
+  EXPECT_NO_THROW(simulator.get_reference_velocity());
+  EXPECT_NO_THROW(simulator.get_reference_acceleration(test_vector3d));
+  EXPECT_NO_THROW(simulator.get_reference_acceleration());
+  EXPECT_NO_THROW(simulator.get_reference_yaw(test_d));
+  EXPECT_NO_THROW(simulator.get_reference_yaw());
+  EXPECT_NO_THROW(simulator.get_reference_yaw_rate(test_d));
+  EXPECT_NO_THROW(simulator.get_reference_yaw_rate());
+  EXPECT_NO_THROW(simulator.get_actuation_motors_angular_velocity());
+  EXPECT_NO_THROW(simulator.get_actuation_motors_angular_velocity(test_vector4d));
+  EXPECT_NO_THROW(simulator.get_external_force(test_vector3d));
+  EXPECT_NO_THROW(simulator.get_external_force());
+  EXPECT_NO_THROW(simulator.get_control_mode(test_control_mode));
+  EXPECT_NO_THROW(simulator.get_control_mode());
+  EXPECT_NO_THROW(simulator.get_yaw_control_mode(test_yaw_control_mode));
+  EXPECT_NO_THROW(simulator.get_yaw_control_mode());
 }
 
 TEST(Simulator, setters) {

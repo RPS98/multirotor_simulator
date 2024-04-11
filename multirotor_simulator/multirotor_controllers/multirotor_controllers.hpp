@@ -447,6 +447,22 @@ public:
     update_velocity_controller_params(controller_params.velocity_controller_params);
   }
 
+  /**
+   * @brief Convert yaw rate to angle
+   *
+   * @param current_yaw_angle Current yaw angle (rad)
+   * @param desired_yaw_rate Desired yaw rate (rad/s)
+   *
+   * @return Scalar Desired yaw angle (rad)
+   */
+  double yaw_rate_to_angle(const Scalar current_yaw_angle, const Scalar desired_yaw_rate) {
+    const double kp = acro_controller_.get_kp_rot().diagonal().z();
+    if (kp == 0.0) {
+      return current_yaw_angle;
+    }
+    return (current_yaw_angle + desired_yaw_rate / kp);
+  }
+
   // Getters
 
   /**
