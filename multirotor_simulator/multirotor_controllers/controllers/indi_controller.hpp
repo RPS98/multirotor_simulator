@@ -93,7 +93,7 @@ struct IndiControllerParams {
  * @tparam num_rotors Number of rotors of the multirotor
  */
 template <typename P = double, int num_rotors = 4>
-class IndiController {
+class IndiController : public pid_controller::PID<P> {
   // Check if P is a numeric type
   static_assert(std::is_floating_point<P>::value,
                 "IndiController must be used with a floating-point type");
@@ -121,18 +121,16 @@ public:
   IndiController(const Matrix3 &inertia,
                  const MatrixN &mixer_matrix_inverse,
                  const PIDParams &pid_params)
-      : inertia_(inertia), mixer_matrix_inverse_(mixer_matrix_inverse), pid_(pid_params) {}
+      : inertia_(inertia), mixer_matrix_inverse_(mixer_matrix_inverse), PID(pid_params) {}
 
   /**
    * @brief Construct a new Indi Controller object
    *
-   * @param inertia Vehicle inertia matrix (kg m^2)
-   * @param mixer_matrix_inverse Mixer matrix inverse [num_rotors x 6]
-   * @param pid_params PID parameters
+   * @param params IndiControllerParams parameters
    */
   explicit IndiController(const IndiControllerParams<P> &params = IndiControllerParams<P>())
       : inertia_(params.inertia), mixer_matrix_inverse_(params.mixer_matrix_inverse),
-        pid_(params.pid_params) {}
+        PID(params.pid_params) {}
   /**
    * @brief Destroy the Indi Controller object
    *
@@ -156,12 +154,12 @@ public:
                                          const Scalar dt) {
     // PID control for get the desired angular velocity
     const Vector3 angular_velocity_error =
-        pid_.get_error(current_vehicle_angular_velocity, desired_angular_velocity);
+        this->get_error(current_vehicle_angular_velocity, desired_angular_velocity);
 
-    desired_angular_acceleration_ = pid_.compute_control(dt, angular_velocity_error);
+    const Vector3 desired_angular_acceleration = this->compute_control(dt, angular_velocity_error);
 
     // Compute the desired torque: L = I * dw/dt + w x (I * w)
-    desired_torque_ = inertia_ * desired_angular_acceleration_ +
+    desired_torque_ = inertia_ * desired_angular_acceleration +
                       desired_angular_velocity.cross(inertia_ * desired_angular_velocity);
 
     // Compute the desired motor angular velocity squared
@@ -194,13 +192,6 @@ public:
   }
 
   /**
-   * @brief Update PID parameters
-   *
-   * @param pid_params PID parameters
-   */
-  inline void update_pid_params(const PIDParams &pid_params) { pid_.update_params(pid_params); }
-
-  /**
    * @brief Update controller parameters
    *
    * @param params IndiControllerParams
@@ -208,13 +199,8 @@ public:
   inline void update_params(const IndiControllerParams<P> &params) {
     update_inertia(params.inertia);
     update_mixer_matrix_inverse(params.mixer_matrix_inverse);
-    update_pid_params(params.pid_params);
+    this->update_pid_params(params.pid_params);
   }
-
-  /**
-   * @brief Reset controller
-   */
-  inline void reset_controller() { pid_.reset_controller(); }
 
   // Getters
 
@@ -223,101 +209,62 @@ public:
    *
    * @return Matrix3 Inertia matrix (kg m^2)
    */
-  inline Matrix3 get_inertia() const { return inertia_; }
+  inline const Matrix3 &get_inertia() const { return inertia_; }
 
   /**
    * @brief Get the mixer matrix inverse
    *
    * @return MatrixN Mixer matrix inverse
    */
-  inline MatrixN get_mixer_matrix_inverse() const { return mixer_matrix_inverse_; }
-
-  /**
-   * @brief Get the PID
-   *
-   * @return PID
-   */
-  inline PID get_pid() const { return pid_; }
-
-  /**
-   * @brief Get the PID
-   *
-   * @return const PID&
-   */
-  inline const PID &get_pid_const() const { return pid_; }
-
-  /**
-   * @brief Get the desired angular acceleration
-   *
-   * @return Vector3 Desired angular acceleration (rad/s^2)
-   */
-  inline Vector3 get_desired_angular_acceleration() const { return desired_angular_acceleration_; }
+  inline const MatrixN &get_mixer_matrix_inverse() const { return mixer_matrix_inverse_; }
 
   /**
    * @brief Get the desired angular acceleration
    *
    * @return constVector3& Desired angular acceleration (rad/s^2)
    */
-  inline const Vector3 &get_desired_angular_acceleration_const() const {
-    return desired_angular_acceleration_;
-  }
-
-  /**
-   * @brief Get the desired thrust
-   *
-   * @return Vector3 Desired thrust (N)
-   */
-  inline Vector3 get_desired_thrust() const { return desired_thrust_; }
+  inline const Vector3 &get_desired_angular_acceleration() const { return this->get_output(); }
 
   /**
    * @brief Get the desired thrust
    *
    * @return const Vector3& Desired thrust (N)
    */
-  inline const Vector3 &get_desired_thrust_const() const { return desired_thrust_; }
-
-  /**
-   * @brief Get the desired torque
-   *
-   * @return Vector3 Desired torque (N m)
-   */
-  inline Vector3 get_desired_torque() const { return desired_torque_; }
+  inline const Vector3 &get_desired_thrust() const { return desired_thrust_; }
 
   /**
    * @brief Get the desired torque
    *
    * @return const Vector3& Desired torque (N m)
    */
-  inline const Vector3 &get_desired_torque_const() const { return desired_torque_; }
-
-  /**
-   * @brief Get the motor angular velocity
-   *
-   * @return VectorN Motor angular velocity squared (rad^2/s^2)
-   */
-  inline VectorN get_motor_angular_velocity() const { return motor_angular_velocity_; }
+  inline const Vector3 &get_desired_torque() const { return desired_torque_; }
 
   /**
    * @brief Get the motor angular velocity
    *
    * @return const VectorN& Motor angular velocity squared (rad^2/s^2)
    */
-  inline const VectorN &get_motor_angular_velocity_const() const { return motor_angular_velocity_; }
+  inline const VectorN &get_motor_angular_velocity() const { return motor_angular_velocity_; }
+
+  /**
+   * @brief Get the angular velocity error
+   *
+   * @return Vector3& Angular velocity error (rad/s)
+   */
+  inline const Vector3 &get_angular_velocity_error() const {
+    return this->get_proportional_error();
+  }
 
 protected:
   // Model
   Matrix3 inertia_              = Matrix3::Zero();  // Inertia matrix (kg m^2)
   MatrixN mixer_matrix_inverse_ = MatrixN::Zero();  // [Fxyz, Mxyz]
 
-  // PID controller
-  PID pid_;
-
   // Internal variables
-  Vector3 desired_angular_acceleration_ = Vector3::Zero();  // rad/s^2
-  Vector3 desired_thrust_               = Vector3::Zero();  // N
-  Vector3 desired_torque_               = Vector3::Zero();  // N·m
-  VectorN motor_angular_velocity_       = VectorN::Zero();  // rad^2/s^2
-};                                                          // Class IndiController
+  Vector3 desired_thrust_         = Vector3::Zero();  // N
+  Vector3 desired_torque_         = Vector3::Zero();  // N·m
+  VectorN motor_angular_velocity_ = VectorN::Zero();  // rad^2/s^2
+};                                                    // Class IndiController
 
 /**
  * @brief Compute the mixer matrix inverse for quadrotors and hexarotors

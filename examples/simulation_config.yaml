@@ -27,11 +27,12 @@ sim_config:
   - [ 0.0, 0.0, 1.0]
   - [ 1.0, 1.0, 1.0]
   - [ 0.0, 0.0, 1.0]
+  yaw_rate_reference: 0.1 # rad/s
   floor_height: 0.0
 dynamics:
   state:
     position: [0.0, 0.0, 0.0] # x, y, z
-    orientation: [1.0, 0.0, 0.0, 0.0] # qw, qx, qy, qz
+    orientation: [0.9659258, 0.0, 0.0, 0.2588192] # qw, qx, qy, qz
     linear_velocity: [0.0, 0.0, 0.0] # vx, vy, vz
     angular_velocity: [0.0, 0.0, 0.0] # wx, wy, wz
     linear_acceleration: [0.0, 0.0, 0.0] # ax, ay, az
@@ -85,8 +86,8 @@ controller:
     velocity_limit: [10.0, 10.0, 10.0] # m/s
 imu:
   gyro_noise_var: 0.003 # rad/s
-  accel_noise_var: 0.005 # m/s^2
-  gyro_bias_noise_autocorr_time: 1.0e-7 # s
-  accel_bias_noise_autocorr_time: 1.0e-7 # s
+  accel_noise_var: 0.0005 # m/s^2
+  gyro_bias_noise_autocorr_time: 0.0 # 1.0e-7 # s
+  accel_bias_noise_autocorr_time: 0.0 # 1.0e-7 # s
 inertial_odometry:
   alpha: 0.9

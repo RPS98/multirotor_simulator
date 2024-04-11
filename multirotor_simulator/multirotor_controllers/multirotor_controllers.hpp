@@ -178,18 +178,18 @@ public:
     Vector3 thrust_w = acro_controller_.acceleration_to_thrust(desired_acceleration);
 
     // Desired angular velocity
-    Vector3 desired_vehicle_angular_velocity =
+    Vector3 desired_angular_velocity =
         acro_controller_.yaw_angle_to_angular_velocity(current_orientation, desired_yaw, thrust_w);
 
     // Thrust in body frame
     Scalar thrust_b = thrust_w.dot(current_orientation.col(2).normalized());
 
     if (thrust_b < 0.0) {
-      thrust_b                         = 0.0;
-      desired_vehicle_angular_velocity = Vector3::Zero();
+      thrust_b                 = 0.0;
+      desired_angular_velocity = Vector3::Zero();
     }
 
-    return std::make_pair(thrust_b, desired_vehicle_angular_velocity);
+    return std::make_pair(thrust_b, desired_angular_velocity);
   }
 
   /**
@@ -265,10 +265,10 @@ public:
                                       const Scalar desired_thrust,
                                       const Vector3 &desired_angular_velocity,
                                       const Scalar dt) {
-    desired_vehicle_angular_velocity_ = desired_angular_velocity;
-    desired_thrust_                   = desired_thrust;
-    desired_motor_angular_velocity_   = convert_acro_to_motor_angular_velocity(
-          current_vehicle_angular_velocity, desired_thrust_, desired_vehicle_angular_velocity_, dt);
+    desired_angular_velocity_       = desired_angular_velocity;
+    desired_thrust_                 = desired_thrust;
+    desired_motor_angular_velocity_ = convert_acro_to_motor_angular_velocity(
+        current_vehicle_angular_velocity, desired_thrust_, desired_angular_velocity_, dt);
     return desired_motor_angular_velocity_;
   }
 
@@ -277,12 +277,11 @@ public:
                                               const Vector3 &desired_linear_acceleration,
                                               const Scalar desired_yaw,
                                               const Scalar dt) {
-    desired_linear_acceleration_ = desired_linear_acceleration;
-    std::tie(desired_thrust_, desired_vehicle_angular_velocity_) =
-        convert_linear_acceleration_to_acro(desired_linear_acceleration_, current_orientation,
-                                            desired_yaw, dt);
+    desired_linear_acceleration_                         = desired_linear_acceleration;
+    std::tie(desired_thrust_, desired_angular_velocity_) = convert_linear_acceleration_to_acro(
+        desired_linear_acceleration_, current_orientation, desired_yaw, dt);
     desired_motor_angular_velocity_ = compute_acro_control(
-        current_vehicle_angular_velocity, desired_thrust_, desired_vehicle_angular_velocity_, dt);
+        current_vehicle_angular_velocity, desired_thrust_, desired_angular_velocity_, dt);
     return desired_motor_angular_velocity_;
   }
 
@@ -448,14 +447,30 @@ public:
     update_velocity_controller_params(controller_params.velocity_controller_params);
   }
 
+  /**
+   * @brief Convert yaw rate to angle
+   *
+   * @param current_yaw_angle Current yaw angle (rad)
+   * @param desired_yaw_rate Desired yaw rate (rad/s)
+   *
+   * @return Scalar Desired yaw angle (rad)
+   */
+  double yaw_rate_to_angle(const Scalar current_yaw_angle, const Scalar desired_yaw_rate) {
+    const double kp = acro_controller_.get_kp_rot().diagonal().z();
+    if (kp == 0.0) {
+      return current_yaw_angle;
+    }
+    return (current_yaw_angle + desired_yaw_rate / kp);
+  }
+
   // Getters
 
   /**
    * @brief Get attitude controller
    *
-   * @return AcroController
+   * @return const AcroController&
    */
-  inline AcroController get_acro_controller() const { return acro_controller_; }
+  inline AcroController &get_acro_controller() { return acro_controller_; }
 
   /**
    * @brief Get attitude controller
@@ -467,9 +482,9 @@ public:
   /**
    * @brief Get indi controller
    *
-   * @return IndiController
+   * @return IndiController&
    */
-  inline IndiController get_indi_controller() const { return indi_controller_; }
+  inline IndiController &get_indi_controller() { return indi_controller_; }
 
   /**
    * @brief Get indi controller
@@ -481,9 +496,9 @@ public:
   /**
    * @brief Get position controller
    *
-   * @return PositionController
+   * @return PositionController&
    */
-  inline PositionController get_position_controller() const { return position_controller_; }
+  inline PositionController &get_position_controller() { return position_controller_; }
 
   /**
    * @brief Get position controller
@@ -497,9 +512,9 @@ public:
   /**
    * @brief Get trajectory controller
    *
-   * @return TrajectoryController
+   * @return TrajectoryController&
    */
-  inline TrajectoryController get_trajectory_controller() const { return trajectory_controller_; }
+  inline TrajectoryController &get_trajectory_controller() { return trajectory_controller_; }
 
   /**
    * @brief Get trajectory controller
@@ -513,9 +528,9 @@ public:
   /**
    * @brief Get velocity controller
    *
-   * @return VelocityController
+   * @return VelocityController&
    */
-  inline VelocityController get_velocity_controller() const { return velocity_controller_; }
+  inline VelocityController &get_velocity_controller() { return velocity_controller_; }
 
   /**
    * @brief Get velocity controller
@@ -529,18 +544,9 @@ public:
   /**
    * @brief Get desired motor angular velocity
    *
-   * @return VectorN
-   */
-  inline VectorN get_desired_motor_angular_velocity() const {
-    return desired_motor_angular_velocity_;
-  }
-
-  /**
-   * @brief Get desired motor angular velocity
-   *
    * @return const VectorN&
    */
-  inline const VectorN &get_desired_motor_angular_velocity_const() const {
+  inline const VectorN &get_desired_motor_angular_velocity() const {
     return desired_motor_angular_velocity_;
   }
 
@@ -552,68 +558,34 @@ public:
   inline Scalar get_desired_thrust() const { return desired_thrust_; }
 
   /**
-   * @brief Get desired vehicle angular velocity
-   *
-   * @return Vector3
-   */
-  inline Vector3 get_desired_vehicle_angular_velocity() const {
-    return desired_vehicle_angular_velocity_;
-  }
-
-  /**
    * @brief Get desired vehicle angular velocity const
    *
    * @return const Vector3&
    */
-  inline const Vector3 &get_desired_vehicle_angular_velocity_const() const {
-    return desired_vehicle_angular_velocity_;
-  }
-
-  /**
-   * @brief Get desired linear acceleration
-   *
-   * @return Vector3
-   */
-  inline Vector3 get_desired_linear_acceleration() const { return desired_linear_acceleration_; }
+  inline const Vector3 &get_desired_angular_velocity() const { return desired_angular_velocity_; }
 
   /**
    * @brief Get desired linear acceleration
    *
    * @return const Vector3&
    */
-  inline const Vector3 &get_desired_linear_acceleration_const() const {
+  inline const Vector3 &get_desired_linear_acceleration() const {
     return desired_linear_acceleration_;
   }
 
   /**
    * @brief Get desired linear velocity
    *
-   * @return Vector3
-   */
-  inline Vector3 get_desired_linear_velocity() const { return desired_linear_velocity_; }
-
-  /**
-   * @brief Get desired linear velocity
-   *
    * @return const Vector3&
    */
-  inline const Vector3 &get_desired_linear_velocity_const() const {
-    return desired_linear_velocity_;
-  }
-
-  /**
-   * @brief Get desired position
-   *
-   * @return Vector3
-   */
-  inline Vector3 get_desired_position() const { return desired_position_; }
+  inline const Vector3 &get_desired_linear_velocity() const { return desired_linear_velocity_; }
 
   /**
    * @brief Get desired position
    *
    * @return const Vector3&
    */
-  inline const Vector3 &get_desired_position_const() const { return desired_position_; }
+  inline const Vector3 &get_desired_position() const { return desired_position_; }
 
 private:
   AcroController acro_controller_;
@@ -622,12 +594,12 @@ private:
   TrajectoryController trajectory_controller_;
   VelocityController velocity_controller_;
 
-  Vector3 desired_position_                 = Vector3::Zero();  // Desired position (m)
-  Vector3 desired_linear_velocity_          = Vector3::Zero();  // Desired velocity (m/s)
-  Vector3 desired_linear_acceleration_      = Vector3::Zero();  // Desired acceleration (m/s^2)
-  Scalar desired_thrust_                    = 0.0;              // Thrust (N)
-  Vector3 desired_vehicle_angular_velocity_ = Vector3::Zero();  // Angular velocity (rad/s)
-  VectorN desired_motor_angular_velocity_   = VectorN::Zero();  // Motor angular velocity (rad/s)
+  Vector3 desired_position_               = Vector3::Zero();  // Desired position (m)
+  Vector3 desired_linear_velocity_        = Vector3::Zero();  // Desired velocity (m/s)
+  Vector3 desired_linear_acceleration_    = Vector3::Zero();  // Desired acceleration (m/s^2)
+  Scalar desired_thrust_                  = 0.0;              // Thrust (N)
+  Vector3 desired_angular_velocity_       = Vector3::Zero();  // Angular velocity (rad/s)
+  VectorN desired_motor_angular_velocity_ = VectorN::Zero();  // Motor angular velocity (rad/s)
 };
 
 }  // namespace controller

@@ -55,6 +55,15 @@ namespace multirotor {
 enum ControlMode { HOVER, MOTOR_W, ACRO, TRAJECTORY, VELOCITY, POSITION };
 
 /**
+ * @brief Yaw control modes
+ *
+ * @details
+ * ANGLE: Yaw angle control
+ * RATE: Yaw rate control
+ */
+enum YawControlMode { ANGLE, RATE };
+
+/**
  * @brief Simulator parameters
  *
  * @tparam P Precision type of the controller
@@ -111,7 +120,7 @@ class Simulator {
   using InertialOdometry       = imu::InertialOdometry<Precision>;
 
 public:
-  Simulator(const SimulatorParams<Precision, num_rotors> &simulator_params =
+  Simulator(const SimulatorParams<Precision, num_rotors>& simulator_params =
                 SimulatorParams<Precision, num_rotors>())
       : dynamics_(simulator_params.dynamics_params),
         controller_(simulator_params.controller_params), imu_(simulator_params.imu_params),
@@ -139,12 +148,12 @@ public:
       floor_collision_ = true;
 
       State state                   = State();
-      state.kinematics.position     = dynamics_.get_state_const().kinematics.position;
+      state.kinematics.position     = dynamics_.get_state().kinematics.position;
       state.kinematics.position.z() = floor_height_;
-      state.kinematics.orientation  = dynamics_.get_state_const().kinematics.orientation;
+      state.kinematics.orientation  = dynamics_.get_state().kinematics.orientation;
 
-      state.dynamics  = dynamics_.get_state_const().dynamics;
-      state.actuators = dynamics_.get_state_const().actuators;
+      state.dynamics  = dynamics_.get_state().dynamics;
+      state.actuators = dynamics_.get_state().actuators;
       dynamics_.set_state(state);
     }
   }
@@ -160,50 +169,56 @@ public:
       return;
     }
 
+    if (yaw_control_mode_ == YawControlMode::RATE) {
+      // Update the reference yaw angle with the reference yaw rate
+      // Need to be updated every time step, because the current yaw is updated
+      update_yaw_reference_with_yaw_rate();
+    }
+
     switch (control_mode_) {
       case MOTOR_W: {
         set_actuation(reference_motors_angular_velocity_);
         break;
       }
       case ACRO: {
-        set_actuation(controller_.compute_acro_control(
-            dynamics_.get_state_const().kinematics.angular_velocity, reference_thrust_,
-            reference_angular_velocity_, dt));
+        set_actuation(
+            controller_.compute_acro_control(dynamics_.get_state().kinematics.angular_velocity,
+                                             reference_thrust_, reference_angular_velocity_, dt));
         break;
       }
       case TRAJECTORY: {
         set_actuation(controller_.compute_trajectory_control(
-            dynamics_.get_state_const().kinematics.position,
-            dynamics_.get_state_const().kinematics.linear_velocity,
-            dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state_const().kinematics.angular_velocity, reference_position_,
+            dynamics_.get_state().kinematics.position,
+            dynamics_.get_state().kinematics.linear_velocity,
+            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
+            dynamics_.get_state().kinematics.angular_velocity, reference_position_,
             reference_velocity_, reference_acceleration_, reference_yaw_, dt));
         break;
       }
       case VELOCITY: {
         set_actuation(controller_.compute_velocity_control(
-            dynamics_.get_state_const().kinematics.linear_velocity,
-            dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state_const().kinematics.angular_velocity, reference_velocity_,
-            reference_yaw_, dt));
+            dynamics_.get_state().kinematics.linear_velocity,
+            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
+            dynamics_.get_state().kinematics.angular_velocity, reference_velocity_, reference_yaw_,
+            dt));
         break;
       }
       case POSITION: {
         set_actuation(controller_.compute_position_control(
-            dynamics_.get_state_const().kinematics.position,
-            dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state_const().kinematics.linear_velocity,
-            dynamics_.get_state_const().kinematics.angular_velocity, reference_position_,
-            reference_yaw_, dt));
+            dynamics_.get_state().kinematics.position,
+            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
+            dynamics_.get_state().kinematics.linear_velocity,
+            dynamics_.get_state().kinematics.angular_velocity, reference_position_, reference_yaw_,
+            dt));
         break;
       }
       case HOVER: {
         set_actuation(controller_.compute_position_control(
-            dynamics_.get_state_const().kinematics.position,
-            dynamics_.get_state_const().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state_const().kinematics.linear_velocity,
-            dynamics_.get_state_const().kinematics.angular_velocity, reference_position_,
-            reference_yaw_, dt));
+            dynamics_.get_state().kinematics.position,
+            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
+            dynamics_.get_state().kinematics.linear_velocity,
+            dynamics_.get_state().kinematics.angular_velocity, reference_position_, reference_yaw_,
+            dt));
         break;
       }
       default:
@@ -223,8 +238,7 @@ public:
     }
     // Convert force from world to body frame
     imu_.update(dt,
-                dynamics_.get_state_const().kinematics.orientation *
-                    dynamics_.get_state_const().dynamics.force,
+                dynamics_.get_state().kinematics.orientation * dynamics_.get_state().dynamics.force,
                 dynamics_.get_state().kinematics.angular_velocity);
   }
 
@@ -235,8 +249,7 @@ public:
    */
   inline void update_inertial_odometry(const Scalar dt) {
     if (floor_collision_) {
-      inertial_odometry_.set_initial_orientation(
-          dynamics_.get_state_const().kinematics.orientation);
+      inertial_odometry_.set_initial_orientation(dynamics_.get_state().kinematics.orientation);
       inertial_odometry_.reset();
     }
     inertial_odometry_.update(imu_.get_measurement_gyro(), imu_.get_measurement_accel(), dt);
@@ -291,17 +304,19 @@ public:
    *
    * @param control_mode ControlMode Control mode
    */
-  inline void set_control_mode(const ControlMode &control_mode) {
+  inline void set_control_mode(const ControlMode& control_mode,
+                               const YawControlMode& yaw_control_mode = YawControlMode::ANGLE) {
     // If the control mode is the same, do nothing
-    if (control_mode_ == control_mode) {
+    if (control_mode_ == control_mode && yaw_control_mode_ == yaw_control_mode) {
       return;
     }
 
     control_mode_       = control_mode;
-    reference_position_ = dynamics_.get_state_const().kinematics.position;
+    yaw_control_mode_   = yaw_control_mode;
+    reference_position_ = dynamics_.get_state().kinematics.position;
     Scalar roll, pitch;
-    state::internal::quaternion_to_Euler(dynamics_.get_state_const().kinematics.orientation, roll,
-                                         pitch, reference_yaw_);
+    state::internal::quaternion_to_Euler(dynamics_.get_state().kinematics.orientation, roll, pitch,
+                                         reference_yaw_);
     reference_velocity_         = Eigen::Vector3d::Zero();
     reference_acceleration_     = Eigen::Vector3d::Zero();
     reference_thrust_           = 0.0;
@@ -314,7 +329,7 @@ public:
    * @param reference_motors_angular_velocity VectorN Reference motors angular velocity (rad/s)
    */
   inline void set_refence_motors_angular_velocity(
-      const VectorN &reference_motors_angular_velocity) {
+      const VectorN& reference_motors_angular_velocity) {
     reference_motors_angular_velocity_ = reference_motors_angular_velocity;
   }
 
@@ -338,14 +353,12 @@ public:
    * @param reference_acceleration Vector3 Reference acceleration (m/s^2)
    * @param reference_yaw Scalar Reference yaw (rad)
    */
-  inline void set_reference_trajectory(const Vector3 &reference_position,
-                                       const Vector3 &reference_velocity,
-                                       const Vector3 &reference_acceleration,
-                                       const Scalar reference_yaw) {
+  inline void set_reference_trajectory(const Vector3& reference_position,
+                                       const Vector3& reference_velocity,
+                                       const Vector3& reference_acceleration) {
     reference_position_     = reference_position;
     reference_velocity_     = reference_velocity;
     reference_acceleration_ = reference_acceleration;
-    reference_yaw_          = reference_yaw;
   }
 
   /**
@@ -354,10 +367,8 @@ public:
    * @param reference_velocity Vector3 Reference velocity (m/s)
    * @param reference_yaw Scalar Reference yaw (rad)
    */
-  inline void set_reference_velocity(const Vector3 &reference_velocity,
-                                     const Scalar reference_yaw) {
+  inline void set_reference_velocity(const Vector3& reference_velocity) {
     reference_velocity_ = reference_velocity;
-    reference_yaw_      = reference_yaw;
   }
 
   /**
@@ -366,10 +377,26 @@ public:
    * @param reference_position Vector3 Reference position (m)
    * @param reference_yaw Scalar Reference yaw (rad)
    */
-  inline void set_reference_position(const Vector3 &reference_position,
-                                     const Scalar reference_yaw) {
+  inline void set_reference_position(const Vector3& reference_position) {
     reference_position_ = reference_position;
-    reference_yaw_      = reference_yaw;
+  }
+
+  /**
+   * @brief Set the reference yaw angle
+   *
+   * @param reference_yaw Scalar Reference yaw angle (rad)
+   */
+  inline void set_reference_yaw_angle(const Scalar reference_yaw) {
+    reference_yaw_ = reference_yaw;
+  }
+
+  /**
+   * @brief Set the reference yaw rate
+   *
+   * @param reference_yaw_rate Scalar Reference yaw rate (rad/s)
+   */
+  inline void set_reference_yaw_rate(const Scalar reference_yaw_rate) {
+    reference_yaw_rate_ = reference_yaw_rate;
   }
 
   // Get Aircraft State
@@ -379,28 +406,21 @@ public:
    *
    * @param state State State
    */
-  inline void get_state(State &state) const { state = dynamics_.get_state(); }
-
-  /**
-   * @brief Get the state
-   *
-   * @return State State
-   */
-  inline State get_state() const { return dynamics_.get_state_(); }
+  inline void get_state(State& state) const { state = dynamics_.get_state(); }
 
   /**
    * @brief Get the state
    *
    * @return const State& State
    */
-  inline const State &get_state_const() const { return dynamics_.get_state_const(); }
+  inline const State& get_state() const { return dynamics_.get_state(); }
 
   /**
    * @brief Get the inertial odometry
    *
    * @param odometry_kinematics Kinematics Kinematics
    */
-  inline void get_odometry(Kinematics &kinematics) const {
+  inline void get_odometry(Kinematics& kinematics) const {
     inertial_odometry_.get_measurement(kinematics.position, kinematics.orientation,
                                        kinematics.linear_velocity, kinematics.angular_velocity,
                                        kinematics.linear_acceleration);
@@ -425,7 +445,7 @@ public:
    * @param gyro Vector3 Gyro measurement (rad/s)
    * @param accel Vector3 Accel measurement (m/s^2)
    */
-  inline void get_imu_measurement(Vector3 &gyro, Vector3 &accel) const {
+  inline void get_imu_measurement(Vector3& gyro, Vector3& accel) const {
     imu_.get_measurement(gyro, accel);
   }
 
@@ -436,86 +456,86 @@ public:
    *
    * @param dynamics Dynamics Dynamics
    */
-  inline void get_dynamics(Dynamics &dynamics) const { dynamics = dynamics_; }
+  inline void get_dynamics(Dynamics& dynamics) const { dynamics = dynamics_; }
 
   /**
    * @brief Get the dynamics
    *
-   * @return Dynamics Dynamics
+   * @return Dynamics& Dynamics
    */
-  inline Dynamics get_dynamics() const { return dynamics_; }
+  inline Dynamics& get_dynamics() { return dynamics_; }
 
   /**
    * @brief Get the dynamics
    *
    * @return const Dynamics& Dynamics
    */
-  inline const Dynamics &get_dynamics_const() const { return dynamics_; }
+  inline const Dynamics& get_dynamics_const() const { return dynamics_; }
 
   /**
    * @brief Get the controller
    *
    * @param controller Controller Controller
    */
-  inline void get_controller(Controller &controller) const { controller = controller_; }
+  inline void get_controller(Controller& controller) const { controller = controller_; }
 
   /**
    * @brief Get the controller
    *
-   * @return Controller Controller
+   * @return Controller& Controller
    */
-  inline Controller get_controller() const { return controller_; }
+  inline Controller& get_controller() { return controller_; }
 
   /**
    * @brief Get the controller
    *
    * @return const Controller& Controller
    */
-  inline const Controller &get_controller_const() const { return controller_; }
+  inline const Controller& get_controller_const() const { return controller_; }
 
   /**
    * @brief Get the imu
    *
    * @param imu IMU IMU
    */
-  inline void get_imu(IMU &imu) const { imu = imu_; }
+  inline void get_imu(IMU& imu) const { imu = imu_; }
 
   /**
    * @brief Get the imu
    *
-   * @return IMU IMU
+   * @return IMU& IMU
    */
-  inline IMU get_imu() const { return imu_; }
+  inline IMU& get_imu() { return imu_; }
 
   /**
    * @brief Get the imu
    *
    * @return const IMU& IMU
    */
-  inline const IMU &get_imu_const() const { return imu_; }
+  inline const IMU& get_imu_const() const { return imu_; }
 
   /**
    * @brief Get the inertial odometry
    *
    * @param inertial_odometry InertialOdometry Inertial odometry
    */
-  inline void get_inertial_odometry(InertialOdometry &inertial_odometry) const {
+  inline void get_inertial_odometry(InertialOdometry& inertial_odometry) const {
     inertial_odometry = inertial_odometry_;
   }
 
   /**
    * @brief Get the inertial odometry
    *
-   * @return InertialOdometry Inertial odometry
+   * @return InertialOdometry& Inertial odometry
    */
-  inline InertialOdometry get_inertial_odometry() const { return inertial_odometry_; }
+  inline InertialOdometry& get_inertial_odometry() { return inertial_odometry_; }
 
   /**
    * @brief Get the inertial odometry
    *
    * @return const InertialOdometry& Inertial odometry
    */
-  inline const InertialOdometry &get_inertial_odometry_const() const { return inertial_odometry_; }
+  inline const InertialOdometry& get_inertial_odometry_const() const { return inertial_odometry_; }
 
   // Setters
 
@@ -524,7 +544,7 @@ public:
    *
    * @param dynamics DynamicsParams Dynamics parameters
    */
-  inline void set_dynamics_params(const DynamicsParams &dynamics_params) {
+  inline void set_dynamics_params(const DynamicsParams& dynamics_params) {
     dynamics_ = Dynamics(dynamics_params);
   }
 
@@ -533,7 +553,7 @@ public:
    *
    * @param controller ControllerParams Controller parameters
    */
-  inline void set_controller_params(const ControllerParams &controller_params) {
+  inline void set_controller_params(const ControllerParams& controller_params) {
     controller_ = Controller(controller_params);
   }
 
@@ -542,14 +562,14 @@ public:
    *
    * @param imu IMUParams IMU parameters
    */
-  inline void set_imu_params(const IMUParams &imu_params) { imu_ = IMU(imu_params); }
+  inline void set_imu_params(const IMUParams& imu_params) { imu_ = IMU(imu_params); }
 
   /**
    * @brief Set the inertial odometry params
    *
    * @param inertial_odometry InertialOdometryParams Inertial odometry parameters
    */
-  inline void set_inertial_odometry_params(const InertialOdometryParams &inertial_odometry_params) {
+  inline void set_inertial_odometry_params(const InertialOdometryParams& inertial_odometry_params) {
     inertial_odometry_ = InertialOdometry(inertial_odometry_params);
   }
 
@@ -559,8 +579,20 @@ protected:
    *
    * @param actuation_motors_angular_velocity VectorN Actuation motors angular velocity (rad/s)
    */
-  inline void set_actuation(const VectorN &actuation_motors_angular_velocity) {
+  inline void set_actuation(const VectorN& actuation_motors_angular_velocity) {
     actuation_motors_angular_velocity_ = actuation_motors_angular_velocity;
+  }
+
+  /**
+   * @brief Update the yaw reference with the yaw rate
+   *
+   */
+  void update_yaw_reference_with_yaw_rate() {
+    // Convert quaternion to Euler angles
+    Scalar roll, pitch, current_yaw;
+    state::internal::quaternion_to_Euler(dynamics_.get_state().kinematics.orientation, roll, pitch,
+                                         current_yaw);
+    reference_yaw_ = controller_.yaw_rate_to_angle(current_yaw, reference_yaw_rate_);
   }
 
 private:
@@ -589,13 +621,15 @@ private:
   Vector3 reference_velocity_     = Vector3::Zero();
   Vector3 reference_acceleration_ = Vector3::Zero();
   Scalar reference_yaw_           = 0.0;
+  Scalar reference_yaw_rate_      = 0.0;
 
   // Actuation Commands
   VectorN actuation_motors_angular_velocity_ = VectorN::Zero();
   Vector3 external_force_                    = Vector3::Zero();
 
   // Control mode
-  ControlMode control_mode_ = MOTOR_W;
+  ControlMode control_mode_        = ControlMode::MOTOR_W;
+  YawControlMode yaw_control_mode_ = YawControlMode::ANGLE;
 
 public:
   // Getters
@@ -605,7 +639,7 @@ public:
    *
    * @param armed bool Arm status
    */
-  inline void get_armed(bool &armed) const { armed = armed_; }
+  inline void get_armed(bool& armed) const { armed = armed_; }
 
   /**
    * @brief Get the arm status
@@ -619,7 +653,7 @@ public:
    *
    * @param floor_collision_enable bool Floor collision enable status
    */
-  inline void get_floor_collision_enable(bool &floor_collision_enable) const {
+  inline void get_floor_collision_enabled(bool& floor_collision_enable) const {
     floor_collision_enable = floor_collision_enable_;
   }
 
@@ -628,14 +662,14 @@ public:
    *
    * @return bool Floor collision enable status
    */
-  inline bool get_floor_collision_enable() const { return floor_collision_enable_; }
+  inline bool get_floor_collision_enabled() const { return floor_collision_enable_; }
 
   /**
    * @brief Get the floor height
    *
    * @param floor_height Scalar Floor height
    */
-  inline void get_floor_height(Scalar &floor_height) const { floor_height = floor_height_; }
+  inline void get_floor_height(Scalar& floor_height) const { floor_height = floor_height_; }
 
   /**
    * @brief Get the floor height
@@ -650,17 +684,8 @@ public:
    * @param reference_motors_angular_velocity VectorN Reference motors angular velocity
    */
   inline void get_reference_motors_angular_velocity(
-      VectorN &reference_motors_angular_velocity) const {
+      VectorN& reference_motors_angular_velocity) const {
     reference_motors_angular_velocity = reference_motors_angular_velocity_;
-  }
-
-  /**
-   * @brief Get the reference motors angular velocity
-   *
-   * @return VectorN Reference motors angular velocity
-   */
-  inline VectorN get_reference_motors_angular_velocity() const {
-    return reference_motors_angular_velocity_;
   }
 
   /**
@@ -668,7 +693,7 @@ public:
    *
    * @return const VectorN& Reference motors angular velocity
    */
-  inline const VectorN &get_reference_motors_angular_velocity_const() const {
+  inline const VectorN& get_reference_motors_angular_velocity() const {
     return reference_motors_angular_velocity_;
   }
 
@@ -677,7 +702,7 @@ public:
    *
    * @param reference_thrust Scalar Reference thrust
    */
-  inline void get_reference_thrust(Scalar &reference_thrust) const {
+  inline void get_reference_thrust(Scalar& reference_thrust) const {
     reference_thrust = reference_thrust_;
   }
 
@@ -693,23 +718,16 @@ public:
    *
    * @param reference_angular_velocity Vector3 Reference angular velocity
    */
-  inline void get_reference_angular_velocity(Vector3 &reference_angular_velocity) const {
+  inline void get_reference_angular_velocity(Vector3& reference_angular_velocity) const {
     reference_angular_velocity = reference_angular_velocity_;
   }
 
   /**
    * @brief Get the reference angular velocity
    *
-   * @return Vector3 Reference angular velocity
-   */
-  inline Vector3 get_reference_angular_velocity() const { return reference_angular_velocity_; }
-
-  /**
-   * @brief Get the reference angular velocity
-   *
    * @return const Vector3& Reference angular velocity
    */
-  inline const Vector3 &get_reference_angular_velocity_const() const {
+  inline const Vector3& get_reference_angular_velocity() const {
     return reference_angular_velocity_;
   }
 
@@ -718,76 +736,55 @@ public:
    *
    * @param reference_position Vector3 Reference position
    */
-  inline void get_reference_position(Vector3 &reference_position) const {
+  inline void get_reference_position(Vector3& reference_position) const {
     reference_position = reference_position_;
   }
 
   /**
    * @brief Get the reference position
    *
-   * @return Vector3 Reference position
-   */
-  inline Vector3 get_reference_position() const { return reference_position_; }
-
-  /**
-   * @brief Get the reference position
-   *
    * @return const Vector3& Reference position
    */
-  inline const Vector3 &get_reference_position_const() const { return reference_position_; }
+  inline const Vector3& get_reference_position() const { return reference_position_; }
 
   /**
    * @brief Get the reference velocity
    *
    * @param reference_velocity Vector3 Reference velocity
    */
-  inline void get_reference_velocity(Vector3 &reference_velocity) const {
+  inline void get_reference_velocity(Vector3& reference_velocity) const {
     reference_velocity = reference_velocity_;
   }
 
   /**
    * @brief Get the reference velocity
    *
-   * @return Vector3 Reference velocity
-   */
-  inline Vector3 get_reference_velocity() const { return reference_velocity_; }
-
-  /**
-   * @brief Get the reference velocity
-   *
    * @return const Vector3& Reference velocity
    */
-  inline const Vector3 &get_reference_velocity_const() const { return reference_velocity_; }
+  inline const Vector3& get_reference_velocity() const { return reference_velocity_; }
 
   /**
    * @brief Get the reference acceleration
    *
    * @param reference_acceleration Vector3 Reference acceleration
    */
-  inline void get_reference_acceleration(Vector3 &reference_acceleration) const {
+  inline void get_reference_acceleration(Vector3& reference_acceleration) const {
     reference_acceleration = reference_acceleration_;
   }
 
   /**
    * @brief Get the reference acceleration
    *
-   * @return Vector3 Reference acceleration
-   */
-  inline Vector3 get_reference_acceleration() const { return reference_acceleration_; }
-
-  /**
-   * @brief Get the reference acceleration
-   *
    * @return const Vector3& Reference acceleration
    */
-  inline const Vector3 &get_reference_acceleration_const() const { return reference_acceleration_; }
+  inline const Vector3& get_reference_acceleration() const { return reference_acceleration_; }
 
   /**
    * @brief Get the reference yaw
    *
    * @param reference_yaw Scalar Reference yaw
    */
-  inline void get_reference_yaw(Scalar &reference_yaw) const { reference_yaw = reference_yaw_; }
+  inline void get_reference_yaw(Scalar& reference_yaw) const { reference_yaw = reference_yaw_; }
 
   /**
    * @brief Get the reference yaw
@@ -797,22 +794,29 @@ public:
   inline Scalar get_reference_yaw() const { return reference_yaw_; }
 
   /**
+   * @brief Get the reference yaw rate
+   *
+   * @param reference_yaw_rate Scalar Reference yaw rate
+   */
+  inline void get_reference_yaw_rate(Scalar& reference_yaw_rate) const {
+    reference_yaw_rate = reference_yaw_rate_;
+  }
+
+  /**
+   * @brief Get the reference yaw rate
+   *
+   * @return Scalar Reference yaw rate
+   */
+  inline Scalar get_reference_yaw_rate() const { return reference_yaw_rate_; }
+
+  /**
    * @brief Get the actuation motors angular velocity
    *
    * @param actuation_motors_angular_velocity VectorN Actuation motors angular velocity
    */
   inline void get_actuation_motors_angular_velocity(
-      VectorN &actuation_motors_angular_velocity) const {
+      VectorN& actuation_motors_angular_velocity) const {
     actuation_motors_angular_velocity = actuation_motors_angular_velocity_;
-  }
-
-  /**
-   * @brief Get the actuation motors angular velocity
-   *
-   * @return VectorN Actuation motors angular velocity
-   */
-  inline VectorN get_actuation_motors_angular_velocity() const {
-    return actuation_motors_angular_velocity_;
   }
 
   /**
@@ -820,7 +824,7 @@ public:
    *
    * @return const VectorN& Actuation motors angular velocity
    */
-  inline const VectorN &get_actuation_motors_angular_velocity_const() const {
+  inline const VectorN& get_actuation_motors_angular_velocity() const {
     return actuation_motors_angular_velocity_;
   }
 
@@ -829,44 +833,46 @@ public:
    *
    * @param external_force Vector3 External force
    */
-  inline void get_external_force(Vector3 &external_force) const {
+  inline void get_external_force(Vector3& external_force) const {
     external_force = external_force_;
   }
 
   /**
    * @brief Get the external force
    *
-   * @return Vector3 External force
-   */
-  inline Vector3 get_external_force() const { return external_force_; }
-
-  /**
-   * @brief Get the external force
-   *
    * @return const Vector3& External force
    */
-  inline const Vector3 &get_external_force_const() const { return external_force_; }
+  inline const Vector3& get_external_force() const { return external_force_; }
 
   /**
    * @brief Get the control mode
    *
    * @param control_mode ControlMode Control mode
    */
-  inline void get_control_mode(ControlMode &control_mode) const { control_mode = control_mode_; }
-
-  /**
-   * @brief Get the control mode
-   *
-   * @return ControlMode Control mode
-   */
-  inline ControlMode get_control_mode() const { return control_mode_; }
+  inline void get_control_mode(ControlMode& control_mode) const { control_mode = control_mode_; }
 
   /**
    * @brief Get the control mode
    *
    * @return const ControlMode& Control mode
    */
-  inline const ControlMode &get_control_mode_const() const { return control_mode_; }
+  inline const ControlMode& get_control_mode() const { return control_mode_; }
+
+  /**
+   * @brief Get the yaw control mode
+   *
+   * @param yaw_control_mode YawControlMode Yaw control mode
+   */
+  inline void get_yaw_control_mode(YawControlMode& yaw_control_mode) const {
+    yaw_control_mode = yaw_control_mode_;
+  }
+
+  /**
+   * @brief Get the yaw control mode
+   *
+   * @return const YawControlMode& Yaw control mode
+   */
+  inline const YawControlMode& get_yaw_control_mode() const { return yaw_control_mode_; }
 };
 }  // namespace multirotor
 

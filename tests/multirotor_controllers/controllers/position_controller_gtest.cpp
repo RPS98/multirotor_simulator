@@ -80,17 +80,13 @@ TEST(PositionController, public_methods) {
 
   EXPECT_NO_THROW(
       position_controller.position_to_linear_velocity(current_position, desired_position, dt));
-  EXPECT_NO_THROW(position_controller.update_pid_params(pid_params));
+  // EXPECT_NO_THROW(position_controller.update_pid_params(pid_params));
   EXPECT_NO_THROW(position_controller.update_params(position_controller_params));
   EXPECT_NO_THROW(position_controller.reset_controller());
 
   // Getters
-  EXPECT_NO_THROW(position_controller.get_pid());
-  EXPECT_NO_THROW(position_controller.get_pid_const());
   EXPECT_NO_THROW(position_controller.get_desired_linear_velocity());
-  EXPECT_NO_THROW(position_controller.get_desired_linear_velocity_const());
   EXPECT_NO_THROW(position_controller.get_position_error());
-  EXPECT_NO_THROW(position_controller.get_position_error_const());
 }
 
 TEST(PositionController, position_to_linear_velocity) {

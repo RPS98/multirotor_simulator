@@ -46,6 +46,7 @@ parser.add_argument('--auto_update', action='store_true',
 parser.add_argument('file', type=str, nargs='?', help='CSV file name',
                     default='multirotor_log.csv')
 FILE_PATH = ""
+PRINT_ERROR = True
 
 
 def press(event):
@@ -81,7 +82,7 @@ def plot_values(data, values, title, axs):
             axs[i].plot(data['time'], data[value_io], linestyle='dashed',
                         label=value_io)
 
-        if data[value_ref]:
+        if PRINT_ERROR and data[value_ref]:
             print("Mean error for ", value, " is: ",
                   compute_mean_error(data[value_gt], data[value_ref]))
 
@@ -89,7 +90,8 @@ def plot_values(data, values, title, axs):
         axs[i].set_ylabel('Values')
         axs[i].set_title(title + " - " + value)
         axs[i].legend()
-    print("")
+    if PRINT_ERROR:
+        print("")
 
 
 def plot_values_3d(data, values, title, axs):
@@ -249,6 +251,8 @@ def main():
 
     if args.auto_update:
         print("Auto update plots")
+        global PRINT_ERROR
+        PRINT_ERROR = False
         ani0 = FuncAnimation(fig0, update_plot_figure0,
                              fargs=(axs0,), interval=3000)
         ani1 = FuncAnimation(fig1, update_plot_figure1,

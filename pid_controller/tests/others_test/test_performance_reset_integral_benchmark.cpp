@@ -82,7 +82,6 @@ static void BM_TEST_RESETINTEGRAL1(benchmark::State &state) {
   for (auto _ : state) {
     Vector3d output = resetIntegral1(integral_accum_error, reset_integral_flag_);
   }
-  //   std::cout << "output: " << integral_accum_error << std::endl;
 }
 BENCHMARK(BM_TEST_RESETINTEGRAL1)->Threads(1)->Repetitions(20);
 
@@ -95,7 +94,6 @@ static void BM_TEST_RESETINTEGRAL2(benchmark::State &state) {
   for (auto _ : state) {
     Vector3d output = resetIntegral2(integral_accum_error, reset_integral_flag_);
   }
-  //   std::cout << "output: " << integral_accum_error << std::endl;
 }
 BENCHMARK(BM_TEST_RESETINTEGRAL2)->Threads(1)->Repetitions(20);
 

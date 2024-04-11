@@ -79,8 +79,10 @@ TEST(AcroController, public_methods) {
 
   // Getters
   EXPECT_NO_THROW(acro_controller.get_desired_angular_velocity());
-  EXPECT_NO_THROW(acro_controller.get_desired_angular_velocity_const());
   EXPECT_NO_THROW(acro_controller.get_desired_thrust());
+  EXPECT_NO_THROW(acro_controller.get_vehicle_mass());
+  EXPECT_NO_THROW(acro_controller.get_gravity());
+  EXPECT_NO_THROW(acro_controller.get_kp_rot());
 }
 
 TEST(AcroController, control) {

@@ -146,6 +146,25 @@ TEST(Controller, public_methods) {
       multirotor_controller.update_trajectory_controller_params(trajectory_controller_params));
   EXPECT_NO_THROW(
       multirotor_controller.update_velocity_controller_params(velocity_controller_params));
+
+  // Getters
+  EXPECT_NO_THROW(multirotor_controller.get_acro_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_acro_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_indi_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_indi_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_position_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_position_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_trajectory_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_trajectory_controller_const());
+  EXPECT_NO_THROW(multirotor_controller.get_velocity_controller());
+  EXPECT_NO_THROW(multirotor_controller.get_velocity_controller_const());
+
+  EXPECT_NO_THROW(multirotor_controller.get_desired_motor_angular_velocity());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_thrust());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_angular_velocity());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_linear_acceleration());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_linear_velocity());
+  EXPECT_NO_THROW(multirotor_controller.get_desired_position());
 }
 
 TEST(Controller, compute_acro_control) {
@@ -657,6 +676,58 @@ TEST(Controller, compute_position_control) {
   EXPECT_EQ(output_motor_angular_velocity[1], output_motor_angular_velocity[2]);
   EXPECT_LT(output_motor_angular_velocity[0], output_motor_angular_velocity[1]);
   desired_position(1) = 0.0;
+}
+
+TEST(Controller, yaw_rate_to_angle) {
+  // Velocity Controller Params
+  velocity_controller::VelocityControllerParams velocity_controller_params =
+      velocity_controller::VelocityControllerParams();
+
+  velocity_controller_params.pid_params.Kp_gains = Eigen::Vector3d::Ones();
+
+  // Position Controller Params
+  position_controller::PositionControllerParams position_controller_params =
+      position_controller::PositionControllerParams();
+
+  position_controller_params.pid_params.Kp_gains = Eigen::Vector3d::Ones();
+
+  // Multirotor Controller
+  multirotor::controller::ControllerParams controller_params;
+  controller_params.acro_controller_params     = get_acro_controller_params();
+  controller_params.indi_controller_params     = get_indi_controller_params();
+  controller_params.velocity_controller_params = velocity_controller_params;
+  controller_params.position_controller_params = position_controller_params;
+
+  multirotor::controller::Controller multirotor_controller =
+      multirotor::controller::Controller(controller_params);
+
+  double current_yaw_angle = 0;
+  double desired_yaw_rate  = 0;
+  double output_yaw_angle  = 0;
+
+  // Positive yaw angle, positive yaw rate
+  current_yaw_angle = M_PI_4;
+  desired_yaw_rate  = 0.1;
+  output_yaw_angle  = multirotor_controller.yaw_rate_to_angle(current_yaw_angle, desired_yaw_rate);
+  EXPECT_GT(output_yaw_angle, current_yaw_angle);
+
+  // Positive yaw angle, negative yaw rate
+  current_yaw_angle = M_PI_4;
+  desired_yaw_rate  = -0.1;
+  output_yaw_angle  = multirotor_controller.yaw_rate_to_angle(current_yaw_angle, desired_yaw_rate);
+  EXPECT_LT(output_yaw_angle, current_yaw_angle);
+
+  // Negative yaw angle, positive yaw rate
+  current_yaw_angle = -M_PI_4;
+  desired_yaw_rate  = 0.1;
+  output_yaw_angle  = multirotor_controller.yaw_rate_to_angle(current_yaw_angle, desired_yaw_rate);
+  EXPECT_GT(output_yaw_angle, current_yaw_angle);
+
+  // Negative yaw angle, negative yaw rate
+  current_yaw_angle = -M_PI_4;
+  desired_yaw_rate  = -0.1;
+  output_yaw_angle  = multirotor_controller.yaw_rate_to_angle(current_yaw_angle, desired_yaw_rate);
+  EXPECT_LT(output_yaw_angle, current_yaw_angle);
 }
 
 int main(int argc, char* argv[]) {

@@ -85,12 +85,8 @@ TEST(VelocityController, public_methods) {
   EXPECT_NO_THROW(velocity_controller.reset_controller());
 
   // Getters
-  EXPECT_NO_THROW(velocity_controller.get_pid());
-  EXPECT_NO_THROW(velocity_controller.get_pid_const());
   EXPECT_NO_THROW(velocity_controller.get_desired_linear_acceleration());
-  EXPECT_NO_THROW(velocity_controller.get_desired_linear_acceleration_const());
   EXPECT_NO_THROW(velocity_controller.get_velocity_error());
-  EXPECT_NO_THROW(velocity_controller.get_velocity_error_const());
 }
 
 TEST(VelocityController, position_to_linear_velocity) {

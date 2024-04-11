@@ -139,37 +139,37 @@ TEST_F(PIDTest, constructor_saturation_check) {
   // Check saturation
   pid_params.upper_output_saturation = Vector::Ones();
   pid_params.lower_output_saturation = -Vector::Ones();
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
   EXPECT_TRUE(pid->get_output_saturation_flag());
 
   // Check saturation both positive
   pid_params.upper_output_saturation = 2.0 * Vector::Ones();
   pid_params.lower_output_saturation = Vector::Ones();
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
   EXPECT_TRUE(pid->get_output_saturation_flag());
 
   // Check saturation both negative
   pid_params.upper_output_saturation = -Vector::Ones();
   pid_params.lower_output_saturation = -2.0 * Vector::Ones();
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
   EXPECT_TRUE(pid->get_output_saturation_flag());
 
   // Check saturation both close to zero
   pid_params.upper_output_saturation = epsilon * Vector::Ones();
   pid_params.lower_output_saturation = -epsilon * Vector::Ones();
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
   EXPECT_FALSE(pid->get_output_saturation_flag());
 
   // Check saturation both positive and close between them
   pid_params.upper_output_saturation = Vector::Ones();
   pid_params.lower_output_saturation = Vector::Ones() + Vector::Ones() * epsilon;
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
   EXPECT_FALSE(pid->get_output_saturation_flag());
 
   // Check saturation both negative and close between them
   pid_params.upper_output_saturation = -Vector::Ones();
   pid_params.lower_output_saturation = -Vector::Ones() - Vector::Ones() * epsilon;
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
   EXPECT_FALSE(pid->get_output_saturation_flag());
 }
 
@@ -211,7 +211,7 @@ TEST_F(PIDTest, compute_control_kp) {
   pid_params.proportional_saturation_flag = true;
   pid_params.upper_output_saturation      = Vector::Ones() * 2.0;
   pid_params.lower_output_saturation      = Vector::Ones() * -2.0;
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
 
   reference = Eigen::Vector3d::Ones() * 3.0;
   error     = pid->get_error(state, reference);
@@ -236,7 +236,7 @@ TEST_F(PIDTest, compute_control_ki) {
   pid_params.Kp_gains = Kp_gains;
   pid_params.Ki_gains = Ki_gains;
   pid_params.Kd_gains = Kd_gains;
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
 
   state = Eigen::Vector3d::Zero();
 
@@ -265,7 +265,7 @@ TEST_F(PIDTest, compute_control_ki) {
   dt                        = 1.0;
   antiwindup_cte            = Vector::Ones() * 2.0;
   pid_params.antiwindup_cte = antiwindup_cte;
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
 
   reference = Eigen::Vector3d::Ones() * 3.0;
   error     = pid->get_error(state, reference);
@@ -287,7 +287,7 @@ TEST_F(PIDTest, compute_control_kd) {
   pid_params.Kp_gains = Kp_gains;
   pid_params.Ki_gains = Ki_gains;
   pid_params.Kd_gains = Kd_gains;
-  pid->update_params(pid_params);
+  pid->update_pid_params(pid_params);
 
   state = Eigen::Vector3d::Zero();
 

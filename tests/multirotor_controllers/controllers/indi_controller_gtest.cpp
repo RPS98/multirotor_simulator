@@ -111,6 +111,15 @@ TEST(INDIController, public_methods) {
   EXPECT_NO_THROW(indi_controller.acro_to_motor_angular_velocity(current_angular_velocity, thrust,
                                                                  desired_angular_velocity, dt));
   Eigen::Matrix<double, 6, 4> mixer_matrix = Eigen::Matrix<double, 6, 4>::Zero();
+
+  // Getters
+  EXPECT_NO_THROW(indi_controller.get_inertia());
+  EXPECT_NO_THROW(indi_controller.get_mixer_matrix_inverse());
+  EXPECT_NO_THROW(indi_controller.get_desired_angular_acceleration());
+  EXPECT_NO_THROW(indi_controller.get_desired_thrust());
+  EXPECT_NO_THROW(indi_controller.get_desired_torque());
+  EXPECT_NO_THROW(indi_controller.get_motor_angular_velocity());
+  EXPECT_NO_THROW(indi_controller.get_angular_velocity_error());
 }
 
 TEST(INDIController, compute_quadrotor_mixer_matrix_inverse) {

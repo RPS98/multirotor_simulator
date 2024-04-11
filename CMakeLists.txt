@@ -67,7 +67,7 @@ set(SOURCE_HPP_FILES
 )
 
 # Create library
-add_library(${PROJECT_NAME} INTERFACE ${SOURCE_HPP_FILES})
+add_library(${PROJECT_NAME} INTERFACE)
 
 # Export library headers
 target_include_directories(${PROJECT_NAME}

@@ -194,18 +194,9 @@ public:
   /**
    * @brief Get the desired angular velocity
    *
-   * @return Vector3 Desired angular velocity (rad/s)
-   */
-  inline Vector3 get_desired_angular_velocity() const { return vehicle_angular_velocity_; }
-
-  /**
-   * @brief Get the desired angular velocity
-   *
    * @return constVector3& Desired angular velocity (rad/s)
    */
-  inline const Vector3& get_desired_angular_velocity_const() const {
-    return vehicle_angular_velocity_;
-  }
+  inline const Vector3& get_desired_angular_velocity() const { return vehicle_angular_velocity_; }
 
   /**
    * @brief Get the desired thrust
@@ -213,6 +204,27 @@ public:
    * @return Scalar Desired thrust (N)
    */
   inline Scalar get_desired_thrust() const { return thrust_; }
+
+  /**
+   * @brief Get the vehicle mass
+   *
+   * @return Scalar Vehicle mass (kg)
+   */
+  inline Scalar get_vehicle_mass() const { return vehicle_mass_; }
+
+  /**
+   * @brief Get the gravity vector
+   *
+   * @return const Vector3& Gravity vector (m/s^2)
+   */
+  inline const Vector3& get_gravity() const { return gravity_; }
+
+  /**
+   * @brief Get the kp_rot
+   *
+   * @return const Matrix3& Proportional gains for the rotation
+   */
+  inline const Matrix3& get_kp_rot() const { return kp_rot_; }
 
 protected:
   // Control
