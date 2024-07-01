@@ -147,6 +147,7 @@ public:
     if (floor_collision_enable_ && dynamics_.get_state().kinematics.position.z() < floor_height_) {
       floor_collision_ = true;
 
+      // Reset state
       State state                   = State();
       state.kinematics.position     = dynamics_.get_state().kinematics.position;
       state.kinematics.position.z() = floor_height_;
@@ -155,6 +156,13 @@ public:
       state.dynamics  = dynamics_.get_state().dynamics;
       state.actuators = dynamics_.get_state().actuators;
       dynamics_.set_state(state);
+
+      // Reset IMU
+      imu_.reset();
+
+      // Reset Inertial Odometry
+      inertial_odometry_.set_initial_orientation(dynamics_.get_state().kinematics.orientation);
+      inertial_odometry_.reset();
     }
   }
 
@@ -233,9 +241,6 @@ public:
    * @param dt Scalar Time step (s)
    */
   inline void update_imu(const Scalar dt) {
-    if (floor_collision_) {
-      imu_.reset();
-    }
     // Convert force from world to body frame
     imu_.update(dt,
                 dynamics_.get_state().kinematics.orientation * dynamics_.get_state().dynamics.force,
@@ -248,10 +253,6 @@ public:
    * @param dt Scalar Time step (s)
    */
   inline void update_inertial_odometry(const Scalar dt) {
-    if (floor_collision_) {
-      inertial_odometry_.set_initial_orientation(dynamics_.get_state().kinematics.orientation);
-      inertial_odometry_.reset();
-    }
     inertial_odometry_.update(imu_.get_measurement_gyro(), imu_.get_measurement_accel(), dt);
   }
 
