@@ -44,6 +44,8 @@ namespace multirotor {
 
 namespace dynamics {
 
+#define LOWEST_UPDATE_FREQUENCY 0.01
+
 /**
  * @brief Struct DynamicsParams
  *
@@ -145,8 +147,13 @@ public:
     if (dt <= 0) {
       throw std::invalid_argument("The time step must be greater than zero");
       return;
-    } else if (dt >= 0.01) {
-      std::cout << "Warning: The time step is too big for the Euler explicit method" << std::endl;
+    } else if (dt > LOWEST_UPDATE_FREQUENCY) {
+      Scalar num_iter = dt / LOWEST_UPDATE_FREQUENCY;
+      for (int i = 0; i < num_iter; i++) {
+        process_euler_explicit(actuation_angular_velocity, LOWEST_UPDATE_FREQUENCY, external_force,
+                               enable_noise);
+      }
+      return;
     }
 
     // Initialize stochastic noise

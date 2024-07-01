@@ -208,6 +208,24 @@ TEST(SimulatorFly, floor_collision_position) {
   EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
 }
 
+TEST(SimulatorFly, low_dt) {
+  SimulatorParams simulator_params = get_simulation_params_from_code();
+  Simulator simulator              = Simulator(simulator_params);
+  simulator.enable_floor_collision(0.0);
+  simulator.arm();
+  simulator.set_control_mode(ControlMode::POSITION);
+
+  double dt = 0.1;
+  for (int i = 0; i < 10000; i++) {
+    simulator.update_controller(dt);
+    simulator.update_dynamics(dt);
+    simulator.update_imu(dt);
+    simulator.update_inertial_odometry(dt);
+  }
+  double epsilon = 0.0001;
+  EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
+}
+
 }  // namespace multirotor
 
 int main(int argc, char* argv[]) {

@@ -817,6 +817,24 @@ TEST(Dynamics, protected_methods_get_vehicle_linear_velocity_derivative) {
   EXPECT_GT(linear_velocity_derivative(2), 0.0);
 }
 
+TEST(Dynamics, process_euler_explicit_floor) {
+  Model<double, 4> model_ = get_model();
+  State<double, 4> state_ = State<double, 4>();
+
+  PublicDynamics<double, 4> dynamics(model_, state_);
+  Eigen::Vector3d external_force = -1.0 * model_.get_mass() * model_.get_gravity();
+  Eigen::Vector4d actuation_motors_angular_velocity = Eigen::Vector4d::Zero();
+
+  double dt = 0.1;
+
+  // Simulate 100 steps
+  for (int i = 0; i < 100; i++) {
+    dynamics.process_euler_explicit(actuation_motors_angular_velocity, dt, external_force, false);
+  }
+  auto state = dynamics.get_state();
+  EXPECT_EQ(state.kinematics.position.z(), 0.0);
+}
+
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
