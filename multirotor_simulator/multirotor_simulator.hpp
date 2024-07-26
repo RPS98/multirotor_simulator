@@ -168,10 +168,18 @@ public:
 
   /**
    * @brief Process the controller
+   * Controller uses the references set by the set_reference methods.
+   * If use_odometry_state is true, the controller gets the state from the odometry instead of the
+   * ground truth state.
+   * So, if references are in odometry frame, set use_odometry_state to true. If references are in
+   * ground truth frame, set to false. Note that odometry has an initial transformation to the
+   * ground truth frame, and has noise.
    *
    * @param dt Scalar Time step (s)
+   * @param use_odometry_state bool Use odometry state instead of ground truth state. Default is
+   * false
    */
-  void update_controller(const Scalar dt) {
+  void update_controller(const Scalar dt, const bool use_odometry_state = false) {
     if (!armed_) {
       set_actuation(VectorN::Zero());
       return;
@@ -183,50 +191,46 @@ public:
       update_yaw_reference_with_yaw_rate();
     }
 
+    Kinematics kinematics = dynamics_.get_state().kinematics;
+    if (use_odometry_state) {
+      kinematics = get_odometry();
+    }
+
     switch (control_mode_) {
       case MOTOR_W: {
         set_actuation(reference_motors_angular_velocity_);
         break;
       }
       case ACRO: {
-        set_actuation(
-            controller_.compute_acro_control(dynamics_.get_state().kinematics.angular_velocity,
-                                             reference_thrust_, reference_angular_velocity_, dt));
+        set_actuation(controller_.compute_acro_control(
+            kinematics.angular_velocity, reference_thrust_, reference_angular_velocity_, dt));
         break;
       }
       case TRAJECTORY: {
         set_actuation(controller_.compute_trajectory_control(
-            dynamics_.get_state().kinematics.position,
-            dynamics_.get_state().kinematics.linear_velocity,
-            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state().kinematics.angular_velocity, reference_position_,
-            reference_velocity_, reference_acceleration_, reference_yaw_, dt));
+            kinematics.position, kinematics.linear_velocity,
+            kinematics.orientation.toRotationMatrix(), kinematics.angular_velocity,
+            reference_position_, reference_velocity_, reference_acceleration_, reference_yaw_, dt));
         break;
       }
       case VELOCITY: {
         set_actuation(controller_.compute_velocity_control(
-            dynamics_.get_state().kinematics.linear_velocity,
-            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state().kinematics.angular_velocity, reference_velocity_, reference_yaw_,
-            dt));
+            kinematics.linear_velocity, kinematics.orientation.toRotationMatrix(),
+            kinematics.angular_velocity, reference_velocity_, reference_yaw_, dt));
         break;
       }
       case POSITION: {
         set_actuation(controller_.compute_position_control(
-            dynamics_.get_state().kinematics.position,
-            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state().kinematics.linear_velocity,
-            dynamics_.get_state().kinematics.angular_velocity, reference_position_, reference_yaw_,
-            dt));
+            kinematics.position, kinematics.orientation.toRotationMatrix(),
+            kinematics.linear_velocity, kinematics.angular_velocity, reference_position_,
+            reference_yaw_, dt));
         break;
       }
       case HOVER: {
         set_actuation(controller_.compute_position_control(
-            dynamics_.get_state().kinematics.position,
-            dynamics_.get_state().kinematics.orientation.toRotationMatrix(),
-            dynamics_.get_state().kinematics.linear_velocity,
-            dynamics_.get_state().kinematics.angular_velocity, reference_position_, reference_yaw_,
-            dt));
+            kinematics.position, kinematics.orientation.toRotationMatrix(),
+            kinematics.linear_velocity, kinematics.angular_velocity, reference_position_,
+            reference_yaw_, dt));
         break;
       }
       default:
@@ -336,9 +340,10 @@ public:
 
   /**
    * @brief Set the reference acro
+   * All references are in body frame
    *
-   * @param reference_thrust Scalar Reference thrust (N)
-   * @param reference_angular_velocity Vector3 Reference angular velocity (rad/s)
+   * @param reference_thrust Scalar Reference thrust (N) in body frame
+   * @param reference_angular_velocity Vector3 Reference angular velocity (rad/s) in body frame
    */
   inline void set_reference_acro(const Scalar reference_thrust,
                                  const Vector3 reference_angular_velocity) {
@@ -347,12 +352,13 @@ public:
   }
 
   /**
-   * @brief Set the reference trajectory
+   * @brief Set the reference trajectory.
+   * All references are in world frame
    *
-   * @param reference_position Vector3 Reference position (m)
-   * @param reference_velocity Vector3 Reference velocity (m/s)
-   * @param reference_acceleration Vector3 Reference acceleration (m/s^2)
-   * @param reference_yaw Scalar Reference yaw (rad)
+   * @param reference_position Vector3 Reference position (m) in world frame
+   * @param reference_velocity Vector3 Reference velocity (m/s) in world frame
+   * @param reference_acceleration Vector3 Reference acceleration (m/s^2) in world frame
+   * @param reference_yaw Scalar Reference yaw (rad) in world frame
    */
   inline void set_reference_trajectory(const Vector3& reference_position,
                                        const Vector3& reference_velocity,
@@ -363,10 +369,11 @@ public:
   }
 
   /**
-   * @brief Set the reference velocityity
+   * @brief Set the reference velocity
+   * All references are in world frame
    *
-   * @param reference_velocity Vector3 Reference velocity (m/s)
-   * @param reference_yaw Scalar Reference yaw (rad)
+   * @param reference_velocity Vector3 Reference velocity (m/s) in world frame
+   * @param reference_yaw Scalar Reference yaw (rad) in world frame
    */
   inline void set_reference_velocity(const Vector3& reference_velocity) {
     reference_velocity_ = reference_velocity;
@@ -374,27 +381,29 @@ public:
 
   /**
    * @brief Set the reference position
+   * All references are in world frame
    *
-   * @param reference_position Vector3 Reference position (m)
-   * @param reference_yaw Scalar Reference yaw (rad)
+   * @param reference_position Vector3 Reference position (m) in world frame
+   * @param reference_yaw Scalar Reference yaw (rad) in world frame
    */
   inline void set_reference_position(const Vector3& reference_position) {
     reference_position_ = reference_position;
   }
 
   /**
-   * @brief Set the reference yaw angle
+   * @brief Set the reference yaw angle in world frame
    *
-   * @param reference_yaw Scalar Reference yaw angle (rad)
+   * @param reference_yaw Scalar Reference yaw angle (rad) in world frame
    */
   inline void set_reference_yaw_angle(const Scalar reference_yaw) {
     reference_yaw_ = reference_yaw;
   }
 
   /**
-   * @brief Set the reference yaw rate
+   * @brief Set the reference yaw rate in world frame
+   * The reference yaw is updated every time step
    *
-   * @param reference_yaw_rate Scalar Reference yaw rate (rad/s)
+   * @param reference_yaw_rate Scalar Reference yaw rate (rad/s) in world frame
    */
   inline void set_reference_yaw_rate(const Scalar reference_yaw_rate) {
     reference_yaw_rate_ = reference_yaw_rate;
