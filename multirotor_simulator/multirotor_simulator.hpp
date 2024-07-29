@@ -34,6 +34,7 @@
 #ifndef MULTIROTOR_SIMULATOR_MULTIROTOR_SIMULATOR_HPP_
 #define MULTIROTOR_SIMULATOR_MULTIROTOR_SIMULATOR_HPP_
 
+#include <optional>
 #include "imu_simulator/inertial_odometry.hpp"
 #include "multirotor_controllers/multirotor_controllers.hpp"
 #include "multirotor_dynamic_model/dynamics.hpp"
@@ -169,17 +170,14 @@ public:
   /**
    * @brief Process the controller
    * Controller uses the references set by the set_reference methods.
-   * If use_odometry_state is true, the controller gets the state from the odometry instead of the
-   * ground truth state.
-   * So, if references are in odometry frame, set use_odometry_state to true. If references are in
-   * ground truth frame, set to false. Note that odometry has an initial transformation to the
-   * ground truth frame, and has noise.
+   * By default, the controller uses the current state from the dynamics (ground truth).
+   * User can provide a state to use as input for the controller.
    *
    * @param dt Scalar Time step (s)
-   * @param use_odometry_state bool Use odometry state instead of ground truth state. Default is
-   * false
+   * @param state Optional state to use as input for the controller
    */
-  void update_controller(const Scalar dt, const bool use_odometry_state = false) {
+  void update_controller(const Scalar dt, const std::optional<Kinematics>& state = std::nullopt) {
+    const Kinematics& kinematics = state.value_or(dynamics_.get_state().kinematics);
     if (!armed_) {
       set_actuation(VectorN::Zero());
       return;
@@ -189,11 +187,6 @@ public:
       // Update the reference yaw angle with the reference yaw rate
       // Need to be updated every time step, because the current yaw is updated
       update_yaw_reference_with_yaw_rate();
-    }
-
-    Kinematics kinematics = dynamics_.get_state().kinematics;
-    if (use_odometry_state) {
-      kinematics = get_odometry();
     }
 
     switch (control_mode_) {

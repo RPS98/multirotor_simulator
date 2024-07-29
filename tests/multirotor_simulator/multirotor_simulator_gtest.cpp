@@ -50,6 +50,7 @@ TEST(Simulator, update) {
   double dt = 0.001;
   EXPECT_NO_THROW(simulator.update_dynamics(dt));
   EXPECT_NO_THROW(simulator.update_controller(dt));
+  EXPECT_NO_THROW(simulator.update_controller(dt, simulator.get_state().kinematics));
   EXPECT_NO_THROW(simulator.update_imu(dt));
   EXPECT_NO_THROW(simulator.update_inertial_odometry(dt));
 }
