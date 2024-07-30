@@ -63,6 +63,7 @@ struct InertialOdometryParams {
 
   // Initial orientation
   Eigen::Quaternion<P> initial_world_orientation = Eigen::Quaternion<P>::Identity();
+  Eigen::Vector3<P> initial_world_position       = Eigen::Vector3<P>::Zero();
 };
 
 /**
@@ -86,10 +87,13 @@ public:
    *
    * @param alpha Filter parameter (0 < alpha < 1, 1: no filter)
    * @param initial_world_orientation Initial orientation in world frame
+   * @param initial_world_position Initial position in world frame
    */
   InertialOdometry(Scalar alpha                         = 1.0,
-                   Quaternion initial_world_orientation = Quaternion::Identity())
-      : alpha_(alpha), initial_world_orientation_(initial_world_orientation) {
+                   Quaternion initial_world_orientation = Quaternion::Identity(),
+                   Vector3 initial_world_position       = Vector3::Zero())
+      : alpha_(alpha), initial_world_orientation_(initial_world_orientation),
+        initial_world_position_(initial_world_position) {
     assert(alpha_ > 0 && alpha_ <= 1);
     reset();
   }
@@ -100,7 +104,9 @@ public:
    * @param params Inertial Odometry parameters
    */
   explicit InertialOdometry(const InertialOdometryParams<Precision>& params)
-      : InertialOdometry(params.alpha, params.initial_world_orientation) {}
+      : InertialOdometry(params.alpha,
+                         params.initial_world_orientation,
+                         params.initial_world_position) {}
 
   ~InertialOdometry() {}
 
@@ -115,6 +121,15 @@ public:
   }
 
   /**
+   * @brief Set the initial position in world frame
+   *
+   * @param initial_position Initial position in world frame
+   */
+  void set_initial_position(const Vector3& initial_position) {
+    initial_world_position_ = initial_position;
+  }
+
+  /**
    * @brief Reset the inertial odometry
    *
    */
@@ -123,10 +138,11 @@ public:
     accel_filtered_      = Vector3::Zero();
     linear_acceleration_ = Vector3::Zero();
     linear_velocity_     = Vector3::Zero();
-    position_            = Vector3::Zero();
     angular_velocity_    = Vector3::Zero();
+    position_            = initial_world_position_;
     orientation_         = initial_world_orientation_;
   }
+
   /**
    * @brief Update the inertial odometry with a new measurement
    *
@@ -198,6 +214,7 @@ public:
 protected:
   // Filter
   Scalar alpha_                         = 0.1;
+  Vector3 initial_world_position_       = Vector3::Zero();
   Quaternion initial_world_orientation_ = Quaternion::Identity();
 
   // Measurement in body frame
