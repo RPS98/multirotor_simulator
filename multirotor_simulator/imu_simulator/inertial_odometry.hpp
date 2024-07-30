@@ -92,7 +92,8 @@ public:
   InertialOdometry(Scalar alpha                         = 1.0,
                    Quaternion initial_world_orientation = Quaternion::Identity(),
                    Vector3 initial_world_position       = Vector3::Zero())
-      : alpha_(alpha), initial_world_orientation_(initial_world_orientation) {
+      : alpha_(alpha), initial_world_orientation_(initial_world_orientation),
+        initial_world_position_(initial_world_position) {
     assert(alpha_ > 0 && alpha_ <= 1);
     reset();
   }
@@ -103,7 +104,9 @@ public:
    * @param params Inertial Odometry parameters
    */
   explicit InertialOdometry(const InertialOdometryParams<Precision>& params)
-      : InertialOdometry(params.alpha, params.initial_world_orientation) {}
+      : InertialOdometry(params.alpha,
+                         params.initial_world_orientation,
+                         params.initial_world_position) {}
 
   ~InertialOdometry() {}
 
@@ -122,7 +125,9 @@ public:
    *
    * @param initial_position Initial position in world frame
    */
-  void set_initial_position(const Vector3& initial_position) { position_ = initial_position; }
+  void set_initial_position(const Vector3& initial_position) {
+    initial_world_position_ = initial_position;
+  }
 
   /**
    * @brief Reset the inertial odometry
@@ -137,6 +142,7 @@ public:
     position_            = initial_world_position_;
     orientation_         = initial_world_orientation_;
   }
+
   /**
    * @brief Update the inertial odometry with a new measurement
    *
