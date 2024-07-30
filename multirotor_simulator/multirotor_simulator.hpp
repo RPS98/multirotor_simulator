@@ -103,6 +103,7 @@ class Simulator {
   using Scalar     = Precision;
   using Vector3    = Eigen::Matrix<Precision, 3, 1>;
   using VectorN    = Eigen::Matrix<Precision, num_rotors, 1>;
+  using Quaternion = Eigen::Quaternion<Precision>;
   using Kinematics = state::internal::Kinematics<Precision>;
 
   // Dynamics
@@ -158,11 +159,18 @@ public:
       state.actuators = dynamics_.get_state().actuators;
       dynamics_.set_state(state);
 
+      // Reset odometry
+
       // Reset IMU
       imu_.reset();
 
       // Reset Inertial Odometry
-      inertial_odometry_.set_initial_orientation(dynamics_.get_state().kinematics.orientation);
+      Vector3 position       = inertial_odometry_.get_position();
+      position.z()           = floor_height_;
+      Quaternion orientation = inertial_odometry_.get_orientation();
+
+      inertial_odometry_.set_initial_position(position);
+      inertial_odometry_.set_initial_orientation(orientation);
       inertial_odometry_.reset();
     }
   }
