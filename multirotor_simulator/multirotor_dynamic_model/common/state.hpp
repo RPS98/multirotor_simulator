@@ -133,13 +133,15 @@ std::ostream& operator<<(std::ostream& os, const Kinematics<T>& kinematics) {
   Eigen::Matrix<T, 3, 1> euler_angles;
   quaternion_to_Euler(kinematics.orientation, euler_angles.x(), euler_angles.y(), euler_angles.z());
   os << kinematics.position.x() << "," << kinematics.position.y() << "," << kinematics.position.z()
-     << "," << euler_angles.x() << "," << euler_angles.y() << "," << euler_angles.z() << ","
-     << kinematics.linear_velocity.x() << "," << kinematics.linear_velocity.y() << ","
-     << kinematics.linear_velocity.z() << "," << kinematics.angular_velocity.x() << ","
-     << kinematics.angular_velocity.y() << "," << kinematics.angular_velocity.z() << ","
-     << kinematics.linear_acceleration.x() << "," << kinematics.linear_acceleration.y() << ","
-     << kinematics.linear_acceleration.z() << "," << kinematics.angular_acceleration.x() << ","
-     << kinematics.angular_acceleration.y() << "," << kinematics.angular_acceleration.z();
+     << "," << kinematics.orientation.w() << "," << kinematics.orientation.x() << ","
+     << kinematics.orientation.y() << "," << kinematics.orientation.z() << "," << euler_angles.x()
+     << "," << euler_angles.y() << "," << euler_angles.z() << "," << kinematics.linear_velocity.x()
+     << "," << kinematics.linear_velocity.y() << "," << kinematics.linear_velocity.z() << ","
+     << kinematics.angular_velocity.x() << "," << kinematics.angular_velocity.y() << ","
+     << kinematics.angular_velocity.z() << "," << kinematics.linear_acceleration.x() << ","
+     << kinematics.linear_acceleration.y() << "," << kinematics.linear_acceleration.z() << ","
+     << kinematics.angular_acceleration.x() << "," << kinematics.angular_acceleration.y() << ","
+     << kinematics.angular_acceleration.z();
   return os;
 }
 
@@ -150,6 +152,10 @@ std::ostream& print_kinematics(std::ostream& os, const Kinematics<T>& kinematics
   os << "position_x: " << kinematics.position.x() << ", "
      << "position_y: " << kinematics.position.y() << ", "
      << "position_z: " << kinematics.position.z() << ", "
+     << "orientation_w: " << kinematics.orientation.w() << ", "
+     << "orientation_x: " << kinematics.orientation.x() << ", "
+     << "orientation_y: " << kinematics.orientation.y() << ", "
+     << "orientation_z: " << kinematics.orientation.z() << ", "
      << "orientation_roll: " << euler_angles.x() << ", "
      << "orientation_pitch: " << euler_angles.y() << ", "
      << "orientation_yaw: " << euler_angles.z() << ", "

@@ -79,7 +79,7 @@ public:
   explicit CsvLogger(const std::string& file_name) : file_name_(file_name) {
     std::cout << "Saving to file: " << file_name << std::endl;
     file_ = std::ofstream(file_name, std::ofstream::out | std::ofstream::trunc);
-    file_ << "time,x,y,z,roll,pitch,yaw,vx,vy,vz,wx,wy,wz,ax,ay,az,dwx,dwy,dwz,"
+    file_ << "time,x,y,z,qw,qx,qy,qz,roll,pitch,yaw,vx,vy,vz,wx,wy,wz,ax,ay,az,dwx,dwy,dwz,"
              "fx,fy,fz,tx,ty,tz,mw1,mw2,mw3,mw4,mdw1,mdw2,mdw3,mdw4,x_ref,y_ref,"
              "z_ref,yaw_ref,vx_ref,vy_ref,vz_ref,wx_ref,wy_ref,"
              "wz_ref,ax_ref,ay_ref,az_ref,dwx_ref,dwy_ref,dwz_ref,fx_ref,fy_ref,fz_ref,"

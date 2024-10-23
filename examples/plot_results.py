@@ -94,7 +94,48 @@ def plot_values(data, values, title, axs):
         print("")
 
 
-def plot_values_3d(data, values, title, axs):
+def plot_drone_3d(position, orientation, axs):
+    """
+    Plots a 3D representation of a drone's position and orientation.
+
+    Ref: https://github.com/enhatem/quadrotor_mpc_acados
+
+    :param position: Position [x, y, z].
+    :param orientaytion: Quaternion [qw, qx, qy, qz].
+    :param axs: Matplotlib 3D axis object.
+    """
+    l = 0.1  # arm length
+    r = 0.05   # rotor length
+
+    x, y, z = position
+    qw, qx, qy, qz = orientation
+
+    # Rotation matrix based on quaternion
+    R = np.array([
+        [1 - 2*qy**2 - 2*qz**2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw],
+        [2*qx*qy + 2*qz*qw, 1 - 2*qx**2 - 2*qz**2, 2*qy*qz - 2*qx*qw],
+        [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx**2 - 2*qy**2]
+    ])
+
+    # Position of rotors and the center of the body
+    c1 = np.array([x, y, z]) + R @ np.array([r, 0, 0])
+    q1 = np.array([x, y, z]) + R @ np.array([l, l, 0])
+    q2 = np.array([x, y, z]) + R @ np.array([-l, -l, 0])
+    q3 = np.array([x, y, z]) + R @ np.array([l, -l, 0])
+    q4 = np.array([x, y, z]) + R @ np.array([-l, l, 0])
+
+    # Rotor end points
+    r1, r2, r3, r4 = [q + R @ np.array([0, 0, r]) for q in [q1, q2, q3, q4]]
+
+    # Plot drone structure
+    axs.plot3D([q1[0], q2[0]], [q1[1], q2[1]], [q1[2], q2[2]], 'k')
+    axs.plot3D([q3[0], q4[0]], [q3[1], q4[1]], [q3[2], q4[2]], 'k')
+    for q, r in zip([q1, q2, q3, q4], [r1, r2, r3, r4]):
+        axs.plot3D([q[0], r[0]], [q[1], r[1]], [q[2], r[2]], 'r')
+    axs.plot3D([x, c1[0]], [y, c1[1]], [z, c1[2]], '-', color='orange', label='heading')
+
+
+def plot_values_3d(data, values, title, axs, plot_drone=True):
     """Plot values vs time."""
     x_values = data[values[0]]
     y_values = data[values[1]]
@@ -114,6 +155,16 @@ def plot_values_3d(data, values, title, axs):
     axs.set_zlabel('z [m]')
     axs.set_title(title)
     axs.legend()
+
+    if plot_drone:
+        # Plot the drone at intervals
+        NUM_STEPS = len(x_values)
+        MEAS_EVERY_STEPS = max(1, NUM_STEPS // 20)  # Plot drone every 50% of the steps
+        
+        for step in range(0, NUM_STEPS, MEAS_EVERY_STEPS):
+            position = np.array([x_values[step], y_values[step], z_values[step]])
+            orientation = np.array([data['qw'][step], data['qx'][step], data['qy'][step], data['qz'][step]])
+            plot_drone_3d(position, orientation, axs)
 
     # Equals aspect ratio
     min_xyz = -1.0 * abs(np.min([x_values, y_values, z_values]))
@@ -143,9 +194,9 @@ def read_csv():
                         break
                     data[key].append(float(value))
 
-    # Check there are 74 keys in the dictionary
-    if len(data.keys()) != 74:
-        print("Warn: number of keys is not 74, it is ", len(data.keys()))
+    # Check there are 78 keys in the dictionary
+    if len(data.keys()) != 78:
+        print("Warn: number of keys is not 78, it is ", len(data.keys()))
 
     # Check all keys in the dictionary have the same length
     for key in data.keys():
@@ -156,7 +207,7 @@ def read_csv():
     return data
 
 
-def update_plot_figure0(frame, axs):
+def update_plot_figure0(frame, axs, plot_drone=True):
     """Update the plot."""
     data = read_csv()
     if len(data['time']) == 0:
@@ -165,7 +216,7 @@ def update_plot_figure0(frame, axs):
     axs.clear()
 
     # 1) x,y,z trajectory
-    plot_values_3d(data, ['x', 'y', 'z'], 'Position', axs)
+    plot_values_3d(data, ['x', 'y', 'z'], 'Position', axs, plot_drone)
 
 
 def update_plot_figure1(frame, axs):
@@ -253,19 +304,19 @@ def main():
         print("Auto update plots")
         global PRINT_ERROR
         PRINT_ERROR = False
-        ani0 = FuncAnimation(fig0, update_plot_figure0,
-                             fargs=(axs0,), interval=3000)
-        ani1 = FuncAnimation(fig1, update_plot_figure1,
-                             fargs=(axs1,), interval=3000)
-        ani2 = FuncAnimation(fig2, update_plot_figure2,
-                             fargs=(axs2,), interval=3000)
-        ani3 = FuncAnimation(fig3, update_plot_figure3,
-                             fargs=(axs3,), interval=3000)
+        FuncAnimation(fig0, update_plot_figure0,
+                      fargs=(axs0, False), interval=3000)
+        FuncAnimation(fig1, update_plot_figure1,
+                      fargs=(axs1,), interval=3000)
+        FuncAnimation(fig2, update_plot_figure2,
+                      fargs=(axs2,), interval=3000)
+        FuncAnimation(fig3, update_plot_figure3,
+                      fargs=(axs3,), interval=3000)
         plt.axis('equal')
         plt.show()
         plt.pause(0.5)
     else:
-        update_plot_figure0(0, axs0)
+        update_plot_figure0(0, axs0, plot_drone=True)
         update_plot_figure1(0, axs1)
         update_plot_figure2(0, axs2)
         update_plot_figure3(0, axs3)
