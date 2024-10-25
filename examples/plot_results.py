@@ -47,6 +47,7 @@ parser.add_argument('file', type=str, nargs='?', help='CSV file name',
                     default='multirotor_log.csv')
 FILE_PATH = ""
 PRINT_ERROR = True
+PLOT_INERTIAL_ODOMETRY = True
 
 
 def press(event):
@@ -77,10 +78,11 @@ def plot_values(data, values, title, axs):
                         label=value_ref)
 
         # Check if there are inertial odometry values
-        value_io = str(value) + "_io"
-        if data[value_io]:
-            axs[i].plot(data['time'], data[value_io], linestyle='dashed',
-                        label=value_io)
+        if PLOT_INERTIAL_ODOMETRY:
+            value_io = str(value) + "_io"
+            if data[value_io]:
+                axs[i].plot(data['time'], data[value_io], linestyle='dashed',
+                            label=value_io)
 
         if PRINT_ERROR and data[value_ref]:
             print("Mean error for ", value, " is: ",
@@ -143,9 +145,11 @@ def plot_values_3d(data, values, title, axs, plot_drone=True):
 
     axs.plot(x_values, y_values, z_values,
              linestyle='solid', label='ground truth')
-    if data[values[0] + "_io"]:
-        axs.plot(data[values[0] + "_io"], data[values[1] + "_io"],
-                 data[values[2] + "_io"], linestyle='dotted', label='inertial odometry')
+    
+    if PLOT_INERTIAL_ODOMETRY:
+        if data[values[0] + "_io"]:
+            axs.plot(data[values[0] + "_io"], data[values[1] + "_io"],
+                    data[values[2] + "_io"], linestyle='dotted', label='inertial odometry')
     if data[values[0] + "_ref"]:
         axs.plot(data[values[0] + "_ref"], data[values[1] + "_ref"],
                  data[values[2] + "_ref"], linestyle='dashed', label='reference')
