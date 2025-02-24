@@ -187,8 +187,9 @@ public:
     // Kinematics linear derivative
     state_.kinematics.linear_acceleration = get_vehicle_linear_velocity_derivative(
         model_.get_mass(), get_thrust_force_in_earth_frame(state_.actuators.motor_angular_velocity),
-        model_.get_drag_force(state_.kinematics.linear_velocity), model_.get_gravity(),
-        model_.get_stochastic_force(), external_force, state_.dynamics.force);
+        model_.get_drag_force(state_.kinematics.linear_velocity),
+        model_.get_mass() * model_.get_gravity(), model_.get_stochastic_force(), external_force,
+        state_.dynamics.force);
 
     Vector3 position_derivative =
         get_vehicle_position_derivative(state_.kinematics.linear_velocity);
