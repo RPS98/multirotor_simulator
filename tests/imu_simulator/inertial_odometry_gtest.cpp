@@ -86,6 +86,7 @@ TEST(InertialOdometryTest, constructor_params) {
 // Test the acceleration integration of the inertial odometry
 TEST(InertialOdometryTest, acceleration_integration) {
   double alpha                               = 0.1;
+  Eigen::Vector3d gravity                    = Eigen::Vector3d(0, 0, -9.81);
   InertialOdometry<double> inertial_odometry = InertialOdometry<double>(alpha);
 
   // Init variables
@@ -106,7 +107,7 @@ TEST(InertialOdometryTest, acceleration_integration) {
 
   // Acceleration in x
   inertial_odometry.reset();
-  accelerometer = Eigen::Vector3d::UnitX() * acceleration_magitude;
+  accelerometer = Eigen::Vector3d::UnitX() * acceleration_magitude - gravity;
 
   for (int i = 0; i < num_iterations; i++) {
     inertial_odometry.update(gyroscope, accelerometer, dt);
@@ -126,7 +127,7 @@ TEST(InertialOdometryTest, acceleration_integration) {
 
   // Desacceleration in x
   inertial_odometry.reset();
-  accelerometer = Eigen::Vector3d::UnitX() * -acceleration_magitude;
+  accelerometer = Eigen::Vector3d::UnitX() * -acceleration_magitude - gravity;
 
   for (int i = 0; i < num_iterations; i++) {
     inertial_odometry.update(gyroscope, accelerometer, dt);
@@ -146,7 +147,7 @@ TEST(InertialOdometryTest, acceleration_integration) {
 
   // Acceleration in y
   inertial_odometry.reset();
-  accelerometer = Eigen::Vector3d::UnitY() * acceleration_magitude;
+  accelerometer = Eigen::Vector3d::UnitY() * acceleration_magitude - gravity;
 
   for (int i = 0; i < num_iterations; i++) {
     inertial_odometry.update(gyroscope, accelerometer, dt);
@@ -166,7 +167,7 @@ TEST(InertialOdometryTest, acceleration_integration) {
 
   // Desacceleration in y
   inertial_odometry.reset();
-  accelerometer = Eigen::Vector3d::UnitY() * -acceleration_magitude;
+  accelerometer = Eigen::Vector3d::UnitY() * -acceleration_magitude - gravity;
 
   for (int i = 0; i < num_iterations; i++) {
     inertial_odometry.update(gyroscope, accelerometer, dt);
@@ -186,7 +187,7 @@ TEST(InertialOdometryTest, acceleration_integration) {
 
   // Acceleration in z
   inertial_odometry.reset();
-  accelerometer = Eigen::Vector3d::UnitZ() * acceleration_magitude;
+  accelerometer = Eigen::Vector3d::UnitZ() * acceleration_magitude - gravity;
 
   for (int i = 0; i < num_iterations; i++) {
     inertial_odometry.update(gyroscope, accelerometer, dt);
@@ -206,7 +207,7 @@ TEST(InertialOdometryTest, acceleration_integration) {
 
   // Desacceleration in z
   inertial_odometry.reset();
-  accelerometer = Eigen::Vector3d::UnitZ() * -acceleration_magitude;
+  accelerometer = Eigen::Vector3d::UnitZ() * -acceleration_magitude - gravity;
 
   for (int i = 0; i < num_iterations; i++) {
     inertial_odometry.update(gyroscope, accelerometer, dt);
@@ -226,9 +227,9 @@ TEST(InertialOdometryTest, acceleration_integration) {
 }
 
 void quaternion_to_euler(const Eigen::Quaterniond quaternion,
-                         double &roll,
-                         double &pitch,
-                         double &yaw) {
+                         double& roll,
+                         double& pitch,
+                         double& yaw) {
   // Extract individual components of the quaternion
   double qw = quaternion.w();
   double qx = quaternion.x();
@@ -390,7 +391,190 @@ TEST(InertialOdometryTest, print_methods) {
   EXPECT_NO_THROW(std::cout << inertial_odometry << std::endl);
 }
 
-int main(int argc, char *argv[]) {
+Eigen::Quaterniond euler_to_quaternion(double roll, double pitch, double yaw) {
+  // Calculate half angles
+  double roll_half  = roll * 0.5;
+  double pitch_half = pitch * 0.5;
+  double yaw_half   = yaw * 0.5;
+
+  // Calculate the sine and cosine of the half angles
+  double sr = sin(roll_half);
+  double cr = cos(roll_half);
+  double sp = sin(pitch_half);
+  double cp = cos(pitch_half);
+  double sy = sin(yaw_half);
+  double cy = cos(yaw_half);
+
+  // Calculate the quaternion components
+  double w = cr * cp * cy + sr * sp * sy;
+  double x = sr * cp * cy - cr * sp * sy;
+  double y = cr * sp * cy + sr * cp * sy;
+  double z = cr * cp * sy - sr * sp * cy;
+
+  // Create the Quaternion object
+  return Eigen::Quaterniond(w, x, y, z).normalized();
+}
+
+TEST(InertialOdometryTest, initial_orientation) {
+  double alpha            = 0.1;
+  Eigen::Vector3d gravity = Eigen::Vector3d(0, 0, -9.81);
+
+  // Init variables
+  double epsilon                = 0.001;
+  double dt                     = 0.001;
+  Eigen::Vector3d gyroscope     = Eigen::Vector3d::Zero();
+  Eigen::Vector3d accelerometer = Eigen::Vector3d::Zero();
+
+  Eigen::Vector3d position            = Eigen::Vector3d::Zero();
+  double roll                         = 0.0;
+  double pitch                        = 0.0;
+  double yaw                          = M_PI_2;
+  Eigen::Quaterniond orientation      = euler_to_quaternion(roll, pitch, yaw);
+  Eigen::Vector3d linear_velocity     = Eigen::Vector3d::Zero();
+  Eigen::Vector3d angular_velocity    = Eigen::Vector3d::Zero();
+  Eigen::Vector3d linear_acceleration = Eigen::Vector3d::Zero();
+
+  InertialOdometryParams<double> params;
+  params.alpha                               = alpha;
+  params.initial_world_orientation           = orientation;
+  params.initial_world_position              = position;
+  params.gravity                             = gravity;
+  InertialOdometry<double> inertial_odometry = InertialOdometry<double>(params);
+
+  int num_iterations = 100;
+
+  // Test acceleration integration
+  double acceleration_magitude = 1.0;  // m/s^2
+
+  // World accelerations
+  Eigen::Vector3d accel_world_x = Eigen::Vector3d::UnitX() * acceleration_magitude;
+  Eigen::Vector3d accel_world_y = Eigen::Vector3d::UnitY() * acceleration_magitude;
+  Eigen::Vector3d accel_world_z = Eigen::Vector3d::UnitZ() * acceleration_magitude;
+
+  // Baselink accelerations
+  Eigen::Vector3d base_link_x_p = orientation.inverse() * accel_world_x - gravity;
+  Eigen::Vector3d base_link_x_n = orientation.inverse() * -accel_world_x - gravity;
+  Eigen::Vector3d base_link_y_p = orientation.inverse() * accel_world_y - gravity;
+  Eigen::Vector3d base_link_y_n = orientation.inverse() * -accel_world_y - gravity;
+  Eigen::Vector3d base_link_z_p = orientation.inverse() * accel_world_z - gravity;
+  Eigen::Vector3d base_link_z_n = orientation.inverse() * -accel_world_z - gravity;
+
+  // Positive acceleration in x world frame
+  inertial_odometry.reset();
+  accelerometer = base_link_x_p;
+  for (int i = 0; i < num_iterations; i++) {
+    inertial_odometry.update(gyroscope, accelerometer, dt);
+  }
+  inertial_odometry.get_measurement(position, orientation, linear_velocity, angular_velocity,
+                                    linear_acceleration);
+
+  EXPECT_GT(linear_acceleration.x(), 0.0);
+  EXPECT_NEAR(linear_acceleration.y(), 0.0, epsilon);
+  EXPECT_NEAR(linear_acceleration.z(), 0.0, epsilon);
+  EXPECT_GT(linear_velocity.x(), 0.0);
+  EXPECT_NEAR(linear_velocity.y(), 0.0, epsilon);
+  EXPECT_NEAR(linear_velocity.z(), 0.0, epsilon);
+  EXPECT_GT(position.x(), 0.0);
+  EXPECT_NEAR(position.y(), 0.0, epsilon);
+  EXPECT_NEAR(position.z(), 0.0, epsilon);
+
+  // Negative acceleration in x world frame
+  inertial_odometry.reset();
+  accelerometer = base_link_x_n;
+  for (int i = 0; i < num_iterations; i++) {
+    inertial_odometry.update(gyroscope, accelerometer, dt);
+  }
+  inertial_odometry.get_measurement(position, orientation, linear_velocity, angular_velocity,
+                                    linear_acceleration);
+
+  EXPECT_LT(linear_acceleration.x(), 0.0);
+  EXPECT_NEAR(linear_acceleration.y(), 0.0, epsilon);
+  EXPECT_NEAR(linear_acceleration.z(), 0.0, epsilon);
+  EXPECT_LT(linear_velocity.x(), 0.0);
+  EXPECT_NEAR(linear_velocity.y(), 0.0, epsilon);
+  EXPECT_NEAR(linear_velocity.z(), 0.0, epsilon);
+  EXPECT_LT(position.x(), 0.0);
+  EXPECT_NEAR(position.y(), 0.0, epsilon);
+  EXPECT_NEAR(position.z(), 0.0, epsilon);
+
+  // Positive acceleration in y world frame
+  inertial_odometry.reset();
+  accelerometer = base_link_y_p;
+  for (int i = 0; i < num_iterations; i++) {
+    inertial_odometry.update(gyroscope, accelerometer, dt);
+  }
+  inertial_odometry.get_measurement(position, orientation, linear_velocity, angular_velocity,
+                                    linear_acceleration);
+
+  EXPECT_NEAR(linear_acceleration.x(), 0.0, epsilon);
+  EXPECT_GT(linear_acceleration.y(), 0.0);
+  EXPECT_NEAR(linear_acceleration.z(), 0.0, epsilon);
+  EXPECT_NEAR(linear_velocity.x(), 0.0, epsilon);
+  EXPECT_GT(linear_velocity.y(), 0.0);
+  EXPECT_NEAR(linear_velocity.z(), 0.0, epsilon);
+  EXPECT_NEAR(position.x(), 0.0, epsilon);
+  EXPECT_GT(position.y(), 0.0);
+  EXPECT_NEAR(position.z(), 0.0, epsilon);
+
+  // Negative acceleration in y world frame
+  inertial_odometry.reset();
+  accelerometer = base_link_y_n;
+  for (int i = 0; i < num_iterations; i++) {
+    inertial_odometry.update(gyroscope, accelerometer, dt);
+  }
+  inertial_odometry.get_measurement(position, orientation, linear_velocity, angular_velocity,
+                                    linear_acceleration);
+
+  EXPECT_NEAR(linear_acceleration.x(), 0.0, epsilon);
+  EXPECT_LT(linear_acceleration.y(), 0.0);
+  EXPECT_NEAR(linear_acceleration.z(), 0.0, epsilon);
+  EXPECT_NEAR(linear_velocity.x(), 0.0, epsilon);
+  EXPECT_LT(linear_velocity.y(), 0.0);
+  EXPECT_NEAR(linear_velocity.z(), 0.0, epsilon);
+  EXPECT_NEAR(position.x(), 0.0, epsilon);
+  EXPECT_LT(position.y(), 0.0);
+  EXPECT_NEAR(position.z(), 0.0, epsilon);
+
+  // Positive acceleration in z world frame
+  inertial_odometry.reset();
+  accelerometer = base_link_z_p;
+  for (int i = 0; i < num_iterations; i++) {
+    inertial_odometry.update(gyroscope, accelerometer, dt);
+  }
+  inertial_odometry.get_measurement(position, orientation, linear_velocity, angular_velocity,
+                                    linear_acceleration);
+
+  EXPECT_NEAR(linear_acceleration.x(), 0.0, epsilon);
+  EXPECT_NEAR(linear_acceleration.y(), 0.0, epsilon);
+  EXPECT_GT(linear_acceleration.z(), 0.0);
+  EXPECT_NEAR(linear_velocity.x(), 0.0, epsilon);
+  EXPECT_NEAR(linear_velocity.y(), 0.0, epsilon);
+  EXPECT_GT(linear_velocity.z(), 0.0);
+  EXPECT_NEAR(position.x(), 0.0, epsilon);
+  EXPECT_NEAR(position.y(), 0.0, epsilon);
+  EXPECT_GT(position.z(), 0.0);
+
+  // Negative acceleration in z world frame
+  inertial_odometry.reset();
+  accelerometer = base_link_z_n;
+  for (int i = 0; i < num_iterations; i++) {
+    inertial_odometry.update(gyroscope, accelerometer, dt);
+  }
+  inertial_odometry.get_measurement(position, orientation, linear_velocity, angular_velocity,
+                                    linear_acceleration);
+
+  EXPECT_NEAR(linear_acceleration.x(), 0.0, epsilon);
+  EXPECT_NEAR(linear_acceleration.y(), 0.0, epsilon);
+  EXPECT_LT(linear_acceleration.z(), 0.0);
+  EXPECT_NEAR(linear_velocity.x(), 0.0, epsilon);
+  EXPECT_NEAR(linear_velocity.y(), 0.0, epsilon);
+  EXPECT_LT(linear_velocity.z(), 0.0);
+  EXPECT_NEAR(position.x(), 0.0, epsilon);
+  EXPECT_NEAR(position.y(), 0.0, epsilon);
+  EXPECT_LT(position.z(), 0.0);
+}
+
+int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

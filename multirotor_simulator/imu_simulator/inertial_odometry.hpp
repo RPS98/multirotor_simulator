@@ -64,6 +64,9 @@ struct InertialOdometryParams {
   // Initial orientation
   Eigen::Quaternion<P> initial_world_orientation = Eigen::Quaternion<P>::Identity();
   Eigen::Vector3<P> initial_world_position       = Eigen::Vector3<P>::Zero();
+
+  // Gravity
+  Eigen::Vector3<P> gravity = Eigen::Vector3<P>(0, 0, -9.81);
 };
 
 /**
@@ -88,12 +91,15 @@ public:
    * @param alpha Filter parameter (0 < alpha < 1, 1: no filter)
    * @param initial_world_orientation Initial orientation in world frame
    * @param initial_world_position Initial position in world frame
+   * @param gravity Gravity vector (m/s^2)
    */
   InertialOdometry(Scalar alpha                         = 1.0,
                    Quaternion initial_world_orientation = Quaternion::Identity(),
-                   Vector3 initial_world_position       = Vector3::Zero())
+                   Vector3 initial_world_position       = Vector3::Zero(),
+                   Vector3 gravity                      = Vector3(0, 0, -9.81))
       : alpha_(alpha), initial_world_orientation_(initial_world_orientation),
-        initial_world_position_(initial_world_position) {
+        initial_world_position_(initial_world_position), gravity_(gravity),
+        linear_acceleration_(-gravity) {
     assert(alpha_ > 0 && alpha_ <= 1);
     reset();
   }
@@ -106,7 +112,8 @@ public:
   explicit InertialOdometry(const InertialOdometryParams<Precision>& params)
       : InertialOdometry(params.alpha,
                          params.initial_world_orientation,
-                         params.initial_world_position) {}
+                         params.initial_world_position,
+                         params.gravity) {}
 
   ~InertialOdometry() {}
 
@@ -135,7 +142,7 @@ public:
    */
   void reset() {
     gyro_filtered_       = Vector3::Zero();
-    accel_filtered_      = Vector3::Zero();
+    accel_filtered_      = -gravity_;
     linear_acceleration_ = Vector3::Zero();
     linear_velocity_     = Vector3::Zero();
     angular_velocity_    = Vector3::Zero();
@@ -216,6 +223,7 @@ protected:
   Scalar alpha_                         = 0.1;
   Vector3 initial_world_position_       = Vector3::Zero();
   Quaternion initial_world_orientation_ = Quaternion::Identity();
+  Vector3 gravity_                      = Vector3(0, 0, -9.81);
 
   // Measurement in body frame
   Vector3 gyro_filtered_  = Vector3::Zero();  // rad/s
@@ -256,7 +264,7 @@ protected:
     angular_velocity_ = gyro_filtered_;
 
     // Linear acceleration in world frame
-    linear_acceleration_ = orientation_.inverse() * accel_filtered_;
+    linear_acceleration_ = (orientation_ * accel_filtered_) + gravity_;
 
     // Integrate angular velocity to get orientation quaternion
     orientation_ = get_quaternion_integrate(orientation_, angular_velocity_, dt);

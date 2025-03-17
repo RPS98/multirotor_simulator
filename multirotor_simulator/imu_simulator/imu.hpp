@@ -130,18 +130,19 @@ public:
    * @brief Update the IMU state
    *
    * @param dt Delta time in seconds
-   * @param specific_force Total force acting on the IMU in body frame.
+   * @param specific_acceleration Total acceleration acting on the IMU in body frame. Hover value
+   * is 9.81 m/s^2.
    * @param vehicle_angular_velocity Angular velocity of the vehicle in the body frame.
    */
   void update(const Scalar dt,
-              const Vector3 specific_force,
+              const Vector3 specific_acceleration,
               const Vector3 vehicle_angular_velocity) {
     if (dt <= 0.0f) {
       return;
     }
 
     process_bias(dt);
-    process_measurement(specific_force, vehicle_angular_velocity);
+    process_measurement(specific_acceleration, vehicle_angular_velocity);
     return;
   }
 
@@ -374,10 +375,11 @@ protected:
   /**
    * @brief Update the IMU measurement.
    *
-   * @param specific_force Total force acting on the IMU in body frame.
+   * @param specific_acceleration Total acceleration acting on the IMU in body frame.
    * @param vehicle_angular_velocity Angular velocity of the vehicle in the body frame.
    */
-  void process_measurement(const Vector3& specific_force, const Vector3& vehicle_angular_velocity) {
+  void process_measurement(const Vector3& specific_acceleration,
+                           const Vector3& vehicle_angular_velocity) {
     Vector3 gyro_noise =
         Vector3(sqrt(gyro_noise_var_) * standard_normal_distribution_(random_number_generator_),
                 sqrt(gyro_noise_var_) * standard_normal_distribution_(random_number_generator_),
@@ -390,7 +392,7 @@ protected:
 
     // Rotate specific force and angular velocity to IMU frame
     gyro_  = imu_orientation_inverse * vehicle_angular_velocity + gyro_bias_ + gyro_noise;
-    accel_ = imu_orientation_inverse * specific_force + accel_bias_ + accel_noise;
+    accel_ = imu_orientation_inverse * specific_acceleration + accel_bias_ + accel_noise;
   }
 };  // class IMU
 

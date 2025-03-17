@@ -246,10 +246,13 @@ public:
    * @param dt Scalar Time step (s)
    */
   inline void update_imu(const Scalar dt) {
-    // Convert force from world to body frame
-    imu_.update(dt,
-                dynamics_.get_state().kinematics.orientation * dynamics_.get_state().dynamics.force,
-                dynamics_.get_state().kinematics.angular_velocity);
+    // Convert acceleration from world to body frame
+    Vector3 imu_a_world_frame =
+        dynamics_.get_state().dynamics.force / dynamics_.get_model_const().get_mass() -
+        dynamics_.get_model_const().get_gravity();
+    Vector3 imu_a_body_frame =
+        dynamics_.get_state().kinematics.orientation.inverse() * imu_a_world_frame;
+    imu_.update(dt, imu_a_body_frame, dynamics_.get_state().kinematics.angular_velocity);
   }
 
   /**
