@@ -136,6 +136,26 @@ SimulatorParams<double, 4> get_simulation_params_from_code() {
   return p;
 }
 
+TEST(SimulatorFly, floor_collision) {
+  SimulatorParams simulator_params = get_simulation_params_from_code();
+  Simulator simulator              = Simulator(simulator_params);
+  simulator.enable_floor_collision(0.0);
+  simulator.arm();
+
+  double dt = 0.001;
+  for (int i = 0; i < 10000; i++) {
+    simulator.update_controller(dt);
+    simulator.update_dynamics(dt);
+    simulator.update_imu(dt);
+    simulator.update_inertial_odometry(dt);
+    Eigen::Vector3d imu_angular_velocity, imu_acceleration;
+    simulator.get_imu_measurement(imu_angular_velocity, imu_acceleration);
+  }
+  double epsilon = 0.001;
+  EXPECT_NEAR(simulator.get_state().kinematics.position.z(), 0.0, epsilon);
+  EXPECT_NEAR(simulator.get_odometry().position.z(), 0.0, epsilon);
+}
+
 TEST(SimulatorFly, floor_collision_motor_w) {
   SimulatorParams simulator_params = get_simulation_params_from_code();
   Simulator simulator              = Simulator(simulator_params);

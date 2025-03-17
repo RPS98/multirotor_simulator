@@ -57,6 +57,7 @@ struct IMUParams {
 
   using Precision  = P;
   using Scalar     = Precision;
+  using Vector3    = Eigen::Matrix<Precision, 3, 1>;
   using Quaternion = Eigen::Quaternion<Precision>;
 
   Scalar gyro_noise_var                 = 0.0;                     // rad^2/s^2
@@ -64,6 +65,9 @@ struct IMUParams {
   Scalar gyro_bias_noise_autocorr_time  = 0.0;                     // rad^2/s^3
   Scalar accel_bias_noise_autocorr_time = 0.0;                     // m^2/s^5
   Quaternion imu_orientation            = Quaternion::Identity();  // Quaternion
+
+  // Gravity
+  Vector3 gravity = Vector3(0, 0, -9.81);
 
   int seed = 0;  // Seed for the random number generator
 };
@@ -99,11 +103,12 @@ public:
       Scalar gyro_bias_noise_autocorr_time  = 0.0,
       Scalar accel_bias_noise_autocorr_time = 0.0,
       Quaternion imu_orientation            = Quaternion::Identity(),
+      Vector3 gravity                       = Vector3(0, 0, -9.81),
       int seed                              = 0)
       : gyro_noise_var_(gyro_noise_var), accel_noise_var_(accel_noise_var),
         gyro_bias_noise_autocorr_time_(gyro_bias_noise_autocorr_time),
         accel_bias_noise_autocorr_time_(accel_bias_noise_autocorr_time),
-        imu_orientation_(imu_orientation) {
+        imu_orientation_(imu_orientation), gravity_(gravity) {
     // Random number generator
     random_number_generator_.seed(seed);
 
@@ -124,6 +129,7 @@ public:
             params.gyro_bias_noise_autocorr_time,
             params.accel_bias_noise_autocorr_time,
             params.imu_orientation,
+            params.gravity,
             params.seed) {}
 
   /**
@@ -156,7 +162,7 @@ public:
 
     // Reset measurement
     gyro_  = Vector3::Zero();
-    accel_ = Vector3::Zero();
+    accel_ = imu_orientation_inverse_ * -gravity_;
   }
 
   // Setters
@@ -214,8 +220,8 @@ public:
    * @param imu_orientation IMU orientation with respect to the body frame.
    */
   inline void set_orientation(const Quaternion& imu_orientation) {
-    imu_orientation_        = imu_orientation;
-    imu_orientation_inverse = imu_orientation_.inverse();
+    imu_orientation_         = imu_orientation;
+    imu_orientation_inverse_ = imu_orientation_.inverse();
   }
 
   // Getters
@@ -292,6 +298,9 @@ public:
   }
 
 protected:
+  // Params
+  Vector3 gravity_ = Vector3(0, 0, -9.81);
+
   // Noise properties
   std::default_random_engine random_number_generator_;  // Random number generator
   std::normal_distribution<P> standard_normal_distribution_ =
@@ -306,8 +315,8 @@ protected:
   Scalar accel_bias_noise_autocorr_time_ = 0.0;  // m^2/s^5
 
   // IMU frame
-  Quaternion imu_orientation_        = Quaternion::Identity();      // Quaternion
-  Quaternion imu_orientation_inverse = imu_orientation_.inverse();  // Quaternion
+  Quaternion imu_orientation_         = Quaternion::Identity();      // Quaternion
+  Quaternion imu_orientation_inverse_ = imu_orientation_.inverse();  // Quaternion
 
   // Bias
   Vector3 gyro_bias_  = Vector3::Zero();  // rad/s
@@ -391,8 +400,8 @@ protected:
                 sqrt(accel_noise_var_) * standard_normal_distribution_(random_number_generator_));
 
     // Rotate specific force and angular velocity to IMU frame
-    gyro_  = imu_orientation_inverse * vehicle_angular_velocity + gyro_bias_ + gyro_noise;
-    accel_ = imu_orientation_inverse * specific_acceleration + accel_bias_ + accel_noise;
+    gyro_  = imu_orientation_inverse_ * vehicle_angular_velocity + gyro_bias_ + gyro_noise;
+    accel_ = imu_orientation_inverse_ * specific_acceleration + accel_bias_ + accel_noise;
   }
 };  // class IMU
 

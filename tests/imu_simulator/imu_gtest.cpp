@@ -62,7 +62,7 @@ public:
   using IMU<T>::gyro_bias_noise_autocorr_time_;
   using IMU<T>::accel_bias_noise_autocorr_time_;
   using IMU<T>::imu_orientation_;
-  using IMU<T>::imu_orientation_inverse;
+  using IMU<T>::imu_orientation_inverse_;
   using IMU<T>::gyro_bias_;
   using IMU<T>::accel_bias_;
   using IMU<T>::gyro_;
@@ -78,9 +78,10 @@ TEST(IMUTest, constructor2) {
   double gyro_bias_noise_autocorr_time  = 1.0e-7;
   double accel_bias_noise_autocorr_time = 1.0e-7;
   Eigen::Quaterniond imu_orientation    = Eigen::Quaterniond::Identity();
+  Eigen::Vector3d gravity               = Eigen::Vector3d(0, 0, -9.81);
 
   IMU<double> imu = IMU<double>(gyro_noise_var, accel_noise_var, gyro_bias_noise_autocorr_time,
-                                accel_bias_noise_autocorr_time, imu_orientation);
+                                accel_bias_noise_autocorr_time, imu_orientation, gravity);
 }
 
 TEST(IMUTest, constructor_params) {
@@ -141,10 +142,10 @@ TEST(IMUTest, public_methods) {
   EXPECT_EQ(imu.imu_orientation_.y(), imu_orientation.y());
   EXPECT_EQ(imu.imu_orientation_.z(), imu_orientation.z());
   // EXPECT_EQ(imu.imu_orientation_inverse, imu_orientation.inverse());
-  EXPECT_EQ(imu.imu_orientation_inverse.w(), imu_orientation.inverse().w());
-  EXPECT_EQ(imu.imu_orientation_inverse.x(), imu_orientation.inverse().x());
-  EXPECT_EQ(imu.imu_orientation_inverse.y(), imu_orientation.inverse().y());
-  EXPECT_EQ(imu.imu_orientation_inverse.z(), imu_orientation.inverse().z());
+  EXPECT_EQ(imu.imu_orientation_inverse_.w(), imu_orientation.inverse().w());
+  EXPECT_EQ(imu.imu_orientation_inverse_.x(), imu_orientation.inverse().x());
+  EXPECT_EQ(imu.imu_orientation_inverse_.y(), imu_orientation.inverse().y());
+  EXPECT_EQ(imu.imu_orientation_inverse_.z(), imu_orientation.inverse().z());
 
   // Getters
   EXPECT_NO_THROW(imu.get_bias(vector1, vector2));
@@ -159,7 +160,7 @@ TEST(IMUTest, public_methods) {
   EXPECT_EQ(imu.gyro_, vector1);
   EXPECT_NO_THROW(imu.get_measurement_accel(vector1));
   EXPECT_EQ(imu.accel_, vector1);
-  EXPECT_NO_THROW(vector1 = imu.get_measurement_accel());
+  EXPECT_NO_THROW(vector1 = imu.get_measurement_gyro());
   EXPECT_EQ(imu.gyro_, vector1);
 }
 
@@ -325,6 +326,7 @@ TEST(IMUTest, process_measurement_noise) {
   double gyro_bias_noise_autocorr_time  = 0;  // No bias for independent measurements
   double accel_bias_noise_autocorr_time = 0;  // No bias for independent measurements
   Eigen::Quaterniond imu_orientation    = Eigen::Quaterniond::Identity();
+  Eigen::Vector3d gravity               = Eigen::Vector3d(0, 0, -9.81);
   double dt                             = 0.001;
 
   // Normal distribution with mean 0 and variance 1
@@ -338,7 +340,7 @@ TEST(IMUTest, process_measurement_noise) {
 
   PublicIMU<double> imu =
       PublicIMU<double>(gyro_noise_var, accel_noise_var, gyro_bias_noise_autocorr_time,
-                        accel_bias_noise_autocorr_time, imu_orientation, seed);
+                        accel_bias_noise_autocorr_time, imu_orientation, gravity, seed);
 
   imu.reset();
 
