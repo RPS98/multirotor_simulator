@@ -699,6 +699,15 @@ void test_geometric_controller(CsvLogger& logger,
   logger.close();
 }
 
+double compute_yaw_angle_path_facing(double vx, double vy, Eigen::Quaterniond current_orientation) {
+  if (sqrt(vx * vx + vy * vy) > 0.1) {
+    return atan2f(vy, vx);
+  }
+  double roll, pitch, yaw;
+  quaternion_to_Euler(current_orientation, roll, pitch, yaw);
+  return yaw;
+}
+
 void test_trajectory_controller_with_takeoff(CsvLogger& logger,
                                              Simulator<double, 4>& simulator,
                                              const double sim_max_t,
@@ -745,7 +754,9 @@ void test_trajectory_controller_with_takeoff(CsvLogger& logger,
       trajectory_generator->evaluateTrajectory(t - max_time_takeoff, references);
       simulator.set_reference_trajectory(references.position, references.velocity,
                                          references.acceleration);
-      simulator.set_reference_yaw_angle(0.0);
+      simulator.set_reference_yaw_angle(compute_yaw_angle_path_facing(
+          references.velocity.x(), references.velocity.y(),
+          simulator.get_dynamics_const().get_state().kinematics.orientation));
     }
     simulator.update_controller(dt);
     simulator.update_dynamics(dt);

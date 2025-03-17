@@ -219,7 +219,7 @@ TEST(SimulatorFly, low_dt) {
   simulator.arm();
   simulator.set_control_mode(ControlMode::POSITION);
 
-  double dt = 0.1;
+  double dt = 0.01;
   for (int i = 0; i < 10000; i++) {
     simulator.update_controller(dt);
     simulator.update_dynamics(dt);
