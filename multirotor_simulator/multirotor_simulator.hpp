@@ -34,6 +34,7 @@
 #ifndef MULTIROTOR_SIMULATOR_MULTIROTOR_SIMULATOR_HPP_
 #define MULTIROTOR_SIMULATOR_MULTIROTOR_SIMULATOR_HPP_
 
+#include <limits>
 #include <optional>
 #include "imu_simulator/inertial_odometry.hpp"
 #include "multirotor_controllers/multirotor_controllers.hpp"
@@ -138,39 +139,48 @@ public:
    * @param dt Scalar Time step (s)
    */
   void update_dynamics(const Scalar dt) {
-    if (floor_collision_enable_ && dynamics_.get_state().kinematics.position.z() < floor_height_) {
-      external_force_ =
-          -dynamics_.get_model_const().get_gravity() * dynamics_.get_model_const().get_mass();
-    }
     dynamics_.process_euler_explicit(actuation_motors_angular_velocity_, dt, external_force_,
                                      !floor_collision_);
-    external_force_  = Vector3::Zero();
+
     floor_collision_ = false;
-    if (floor_collision_enable_ && dynamics_.get_state().kinematics.position.z() < floor_height_) {
+    if (floor_collision_enable_ && dynamics_.get_state().kinematics.position.z() <= floor_height_) {
       floor_collision_ = true;
 
       // Reset state
-      State state                   = State();
-      state.kinematics.position     = dynamics_.get_state().kinematics.position;
-      state.kinematics.position.z() = floor_height_;
-      state.kinematics.orientation  = dynamics_.get_state().kinematics.orientation;
+      State state = State();
 
-      state.dynamics  = dynamics_.get_state().dynamics;
+      // Kinematics
+      state.kinematics.position.x()        = dynamics_.get_state().kinematics.position.x();
+      state.kinematics.position.y()        = dynamics_.get_state().kinematics.position.y();
+      state.kinematics.position.z()        = floor_height_;
+      state.kinematics.orientation         = dynamics_.get_state().kinematics.orientation;
+      state.kinematics.linear_velocity     = Vector3::Zero();
+      state.kinematics.angular_velocity    = Vector3::Zero();
+      state.kinematics.linear_acceleration = Vector3::Zero();
+
+      state.kinematics.position.z() = std::clamp(state.kinematics.position.z(), floor_height_,
+                                                 std::numeric_limits<Scalar>::max());
+      state.kinematics.linear_velocity.z() =
+          std::clamp(dynamics_.get_state().kinematics.linear_velocity.z(), 0.0,
+                     std::numeric_limits<Scalar>::max());
+      state.kinematics.linear_acceleration.z() =
+          std::clamp(dynamics_.get_state().kinematics.linear_acceleration.z(), 0.0,
+                     std::numeric_limits<Scalar>::max());
+
+      // Dynamics
+      state.dynamics.force  = Vector3::Zero();
+      state.dynamics.torque = Vector3::Zero();
+
+      // Actuators
       state.actuators = dynamics_.get_state().actuators;
+
+      // Set state
       dynamics_.set_state(state);
 
-      // Reset odometry
-
-      // Reset IMU
+      // Reset IMU and odometry
       imu_.reset();
-
-      // Reset Inertial Odometry
-      Vector3 position       = inertial_odometry_.get_position();
-      position.z()           = floor_height_;
-      Quaternion orientation = inertial_odometry_.get_orientation();
-
-      inertial_odometry_.set_initial_position(position);
-      inertial_odometry_.set_initial_orientation(orientation);
+      inertial_odometry_.set_initial_position(state.kinematics.position);
+      inertial_odometry_.set_initial_orientation(state.kinematics.orientation);
       inertial_odometry_.reset();
     }
   }
